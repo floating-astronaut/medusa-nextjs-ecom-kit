@@ -3,11 +3,12 @@ import { redirect } from "next/navigation";
 import { AccountNav } from "@/components/account/account-nav";
 import { SiteHeader } from "@/components/site-header";
 import { getCurrentCustomer, getCustomerOrders } from "@/lib/medusa-customer";
+import { formatMoney, region } from "@/config/region";
 
 export const dynamic = "force-dynamic";
 
-function money(n: number, currency = "cad") {
-  return new Intl.NumberFormat("en-CA", { style: "currency", currency: currency.toUpperCase() }).format(n);
+function money(n: number, currency?: string) {
+  return formatMoney(n, currency);
 }
 
 function statusLabel(order: { status: string; payment_status?: string | null }) {
@@ -47,7 +48,7 @@ export default async function AccountOverviewPage() {
                   href="/shop"
                   className="rounded-full bg-[var(--color-forest)] px-6 py-3 text-xs font-semibold uppercase tracking-[0.22em] !text-white"
                 >
-                  Shop the menu
+                  Browse the shop
                 </Link>
                 <Link
                   href="/account/profile"
@@ -78,7 +79,7 @@ export default async function AccountOverviewPage() {
                     href="/shop"
                     className="mt-5 inline-flex rounded-full bg-[var(--color-forest)] px-5 py-3 text-xs font-semibold uppercase tracking-[0.22em] !text-white"
                   >
-                    Shop the menu
+                    Browse the shop
                   </Link>
                 </div>
               ) : (
@@ -92,7 +93,7 @@ export default async function AccountOverviewPage() {
                       <div>
                         <p className="text-sm font-semibold text-[var(--color-forest)]">Order #{order.display_id}</p>
                         <p className="mt-1 text-xs text-[var(--color-muted)]">
-                          {new Date(order.created_at).toLocaleDateString("en-CA", {
+                          {new Date(order.created_at).toLocaleDateString(region.locale, {
                             year: "numeric",
                             month: "short",
                             day: "numeric",

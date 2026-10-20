@@ -58,8 +58,8 @@ export const brand = {
 
   // ── Hours (display copy) ──────────────────────────────────────────────
   hoursDisplay: {
-    weekday: env("NEXT_PUBLIC_HOURS_WEEKDAY", "Mon–Fri 10am – 8pm EST"),
-    saturday: env("NEXT_PUBLIC_HOURS_SATURDAY", "Sat 12pm – 6pm EST"),
+    weekday: env("NEXT_PUBLIC_HOURS_WEEKDAY", "Mon–Fri 10am – 8pm"),
+    saturday: env("NEXT_PUBLIC_HOURS_SATURDAY", "Sat 12pm – 6pm"),
     sunday: env("NEXT_PUBLIC_HOURS_SUNDAY", "Sun · Closed"),
   },
 
@@ -77,7 +77,7 @@ export const brand = {
   fulfillment: env("NEXT_PUBLIC_BRAND_FULFILLMENT", "ship") as BrandFulfillment,
 
   // ── Assets ────────────────────────────────────────────────────────────
-  logoSvg: env("NEXT_PUBLIC_BRAND_LOGO", "/brand/origins-leaf-mark.svg"),
+  logoSvg: env("NEXT_PUBLIC_BRAND_LOGO", "/brand/logo-mark.svg"),
   ogImage: env("NEXT_PUBLIC_BRAND_OG_IMAGE", ""),
 
   // ── Theme — written into CSS custom properties at <html> level ────────
@@ -108,7 +108,7 @@ export const brand = {
   // ── Policy / fulfillment copy used in emails + LocalBusiness ──────────
   shippingPolicy: env(
     "NEXT_PUBLIC_BRAND_SHIPPING_POLICY",
-    "Same-day dispatch on orders paid before 2pm EST. Most addresses arrive in 2–4 business days.",
+    "Most orders arrive in 2–4 business days.",
   ),
   packagingPolicy: env(
     "NEXT_PUBLIC_BRAND_PACKAGING_POLICY",

@@ -6,22 +6,7 @@ import { AddressAutocomplete, type AddressParts } from "@/components/checkout/ad
 import { FreeShippingBar } from "@/components/free-shipping-bar";
 import { useOrder } from "@/components/order-provider";
 import { computeShippingFee, isFreeShipping } from "@/lib/shipping";
-
-const PROVINCES = [
-  { code: "AB", name: "Alberta" },
-  { code: "BC", name: "British Columbia" },
-  { code: "MB", name: "Manitoba" },
-  { code: "NB", name: "New Brunswick" },
-  { code: "NL", name: "Newfoundland and Labrador" },
-  { code: "NS", name: "Nova Scotia" },
-  { code: "NT", name: "Northwest Territories" },
-  { code: "NU", name: "Nunavut" },
-  { code: "ON", name: "Ontario" },
-  { code: "PE", name: "Prince Edward Island" },
-  { code: "QC", name: "Quebec" },
-  { code: "SK", name: "Saskatchewan" },
-  { code: "YT", name: "Yukon" },
-];
+import { formatMoney, region } from "@/config/region";
 
 const inputClass =
   "mt-2 w-full rounded-[1.1rem] border border-[var(--color-line)] bg-white px-4 py-3.5 text-[var(--color-forest)] outline-none transition focus:border-[var(--color-clay)] focus:ring-2 focus:ring-[rgba(168,93,59,0.15)]";
@@ -44,10 +29,9 @@ function SectionHeader({ step, title, subtitle }: { step: string; title: string;
 
 function TrustBadgeRow() {
   const items = [
-    { icon: "🔒", label: "256-bit SSL" },
-    { icon: "📦", label: "Discreet shipping" },
-    { icon: "🇨🇦", label: "Canada-wide" },
-    { icon: "✦", label: "Lab tested" },
+    { icon: "🔒", label: "Secure checkout" },
+    { icon: "📦", label: "Tracked shipping" },
+    { icon: "✦", label: `Ships within ${region.countryName}` },
   ];
   return (
     <div className="flex flex-wrap gap-2">
@@ -82,7 +66,7 @@ const emptyForm = {
   addressLine1: "",
   addressLine2: "",
   city: "",
-  province: "ON",
+  province: "",
   postalCode: "",
   message: "",
 };
@@ -92,7 +76,7 @@ function composeAddress(form: typeof emptyForm) {
     form.addressLine1,
     form.addressLine2,
     [form.city, form.province, form.postalCode].filter(Boolean).join(", "),
-    "Canada",
+    region.countryName,
   ]
     .filter(Boolean)
     .join("\n");
@@ -137,6 +121,14 @@ export function CheckoutPageClient() {
       customerEmail: form.email,
       customerPhone: form.phone,
       customerAddress: composeAddress(form),
+      shippingAddress: {
+        address_1: form.addressLine1,
+        address_2: form.addressLine2,
+        city: form.city,
+        province: form.province,
+        postal_code: form.postalCode,
+        country_code: region.countryCode.toLowerCase(),
+      },
       customerMessage: form.message,
       products: items.map((item) => ({
         id: item.id,
@@ -163,9 +155,6 @@ export function CheckoutPageClient() {
     if (!form.addressLine1.trim()) nextErrors.addressLine1 = "Street address is required.";
     if (!form.city.trim()) nextErrors.city = "City is required.";
     if (!form.postalCode.trim()) nextErrors.postalCode = "Postal code is required.";
-    else if (!/^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/.test(form.postalCode.trim())) {
-      nextErrors.postalCode = "Use a valid Canadian postal code (e.g. M5H 2M9).";
-    }
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -295,7 +284,7 @@ export function CheckoutPageClient() {
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-muted)]">Amount</p>
                   <p className="mt-1 text-3xl font-bold text-[var(--color-clay)]">
-                    ${(submission.orderTotal ?? 0).toFixed(2)}
+                    {formatMoney(submission.orderTotal ?? 0)}
                   </p>
                 </div>
                 <div>
@@ -413,14 +402,14 @@ export function CheckoutPageClient() {
                       +
                     </button>
                   </div>
-                  <p className="text-base font-semibold text-[var(--color-clay)] sm:text-lg">${(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="text-base font-semibold text-[var(--color-clay)] sm:text-lg">{formatMoney(item.price * item.quantity)}</p>
                 </div>
               </div>
             )) : (
               <div className="rounded-[1.4rem] border border-[var(--color-line)] bg-white/70 p-6 text-center sm:p-8">
                 <p className="text-sm leading-7 text-[var(--color-muted)]">Nothing in your cart yet. Head to the shop and pick something out.</p>
                 <Link href="/shop" className="mt-5 inline-flex rounded-full bg-[var(--color-forest)] px-5 py-3 text-xs font-semibold uppercase tracking-[0.22em] !text-white">
-                  Shop the menu
+                  Browse the shop
                 </Link>
               </div>
             )}
@@ -433,7 +422,7 @@ export function CheckoutPageClient() {
                   <dt className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-muted)]">
                     Subtotal · {itemCount} {itemCount === 1 ? "item" : "items"}
                   </dt>
-                  <dd className="text-base font-semibold text-[var(--color-forest)]">${total.toFixed(2)}</dd>
+                  <dd className="text-base font-semibold text-[var(--color-forest)]">{formatMoney(total)}</dd>
                 </div>
                 <div className="flex items-baseline justify-between">
                   <dt className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-muted)]">Shipping</dt>
@@ -444,12 +433,12 @@ export function CheckoutPageClient() {
                         : "text-base font-semibold text-[var(--color-forest)]"
                     }
                   >
-                    {free ? "Free" : `$${shipping.toFixed(2)}`}
+                    {free ? "Free" : formatMoney(shipping)}
                   </dd>
                 </div>
                 <div className="flex items-baseline justify-between border-t border-[var(--color-line)] pt-3">
                   <dt className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-muted)]">Order total</dt>
-                  <dd className="text-2xl font-bold text-[var(--color-clay)]">${grandTotal.toFixed(2)}</dd>
+                  <dd className="text-2xl font-bold text-[var(--color-clay)]">{formatMoney(grandTotal)}</dd>
                 </div>
               </dl>
             </div>
@@ -503,7 +492,6 @@ export function CheckoutPageClient() {
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   autoComplete="tel"
                   inputMode="tel"
-                  placeholder="+1 (___) ___-____"
                   className={inputClass}
                 />
                 {errors.phone ? <p className="mt-2 text-xs text-red-700">{errors.phone}</p> : null}
@@ -516,7 +504,7 @@ export function CheckoutPageClient() {
             <SectionHeader
               step="2"
               title="Shipping address"
-              subtitle="Type to autocomplete — Toronto and Canada-wide."
+              subtitle={`Start typing to autocomplete. We ship within ${region.countryName}.`}
             />
             <div className="mt-5 grid gap-4 sm:grid-cols-6">
               <label className="block sm:col-span-6">
@@ -533,13 +521,13 @@ export function CheckoutPageClient() {
                       postalCode: parts.postal_code || prev.postalCode,
                     }));
                   }}
-                  placeholder="123 Queen St W"
+                  placeholder="123 Main St"
                   inputClassName={inputClass}
                 />
                 {errors.addressLine1 ? <p className="mt-2 text-xs text-red-700">{errors.addressLine1}</p> : null}
               </label>
               <label className="block sm:col-span-6">
-                <span className={labelClass}>Apt / unit / buzzer (optional)</span>
+                <span className={labelClass}>Apartment, suite, unit (optional)</span>
                 <input
                   value={form.addressLine2}
                   onChange={(e) => setForm({ ...form, addressLine2: e.target.value })}
@@ -558,28 +546,22 @@ export function CheckoutPageClient() {
                 {errors.city ? <p className="mt-2 text-xs text-red-700">{errors.city}</p> : null}
               </label>
               <label className="block sm:col-span-2">
-                <span className={labelClass}>Province</span>
-                <select
+                <span className={labelClass}>State / province / region</span>
+                <input
                   value={form.province}
                   onChange={(e) => setForm({ ...form, province: e.target.value })}
+                  autoComplete="address-level1"
                   className={inputClass}
-                >
-                  {PROVINCES.map((p) => (
-                    <option key={p.code} value={p.code}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+                />
               </label>
               <label className="block sm:col-span-2">
                 <span className={labelClass}>Postal code</span>
                 <input
                   value={form.postalCode}
-                  onChange={(e) => setForm({ ...form, postalCode: e.target.value.toUpperCase() })}
+                  onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
                   autoComplete="postal-code"
-                  placeholder="M5H 2M9"
                   inputMode="text"
-                  maxLength={7}
+                  maxLength={20}
                   className={inputClass}
                 />
                 {errors.postalCode ? <p className="mt-2 text-xs text-red-700">{errors.postalCode}</p> : null}
@@ -589,12 +571,12 @@ export function CheckoutPageClient() {
 
           {/* Section 3 — order notes */}
           <section className="rounded-[1.2rem] border border-[var(--color-line)] bg-white/70 p-4 sm:rounded-[1.6rem] sm:p-6">
-            <SectionHeader step="3" title="Order notes" subtitle="Optional — buzzer, timing, anything else." />
+            <SectionHeader step="3" title="Order notes" subtitle="Optional — delivery instructions, timing, anything else." />
             <textarea
               value={form.message}
               onChange={(e) => setForm({ ...form, message: e.target.value })}
               rows={4}
-              placeholder="Buzzer 412, leave with concierge if not home, evenings preferred."
+              placeholder="Leave with the front desk if no one is home."
               className={`${inputClass} mt-4`}
             />
           </section>
@@ -680,8 +662,8 @@ export function CheckoutPageClient() {
             </div>
 
             <div className="mt-5 border-t border-white/12 pt-4 text-[11px] leading-6 text-white/64 sm:mt-6 sm:pt-5">
-              Discreet plain-label parcel. Same-day dispatch on orders paid before
-              2pm EST. Your details are encrypted in transit and never sold.
+              Same-day dispatch on orders paid before {region.dispatchCutoff}. Your
+              details are encrypted in transit and never sold.
             </div>
           </section>
 

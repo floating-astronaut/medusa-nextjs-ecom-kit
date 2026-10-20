@@ -1,8 +1,10 @@
+import { brand } from "@/config/brand";
+
 const MEDUSA_BACKEND_URL = process.env.MEDUSA_BACKEND_URL ?? "http://127.0.0.1:9000";
 const ADMIN_EMAIL = process.env.MEDUSA_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.MEDUSA_ADMIN_PASSWORD;
 const REGION_ID = process.env.MEDUSA_REGION_ID;
-const SALES_CHANNEL_ID = process.env.MEDUSA_SALES_CHANNEL_ID ?? "sc_01KPWEXRC6MGKFNB6YEVNHY7X6";
+const SALES_CHANNEL_ID = process.env.MEDUSA_SALES_CHANNEL_ID;
 
 type CachedToken = { token: string; expiresAt: number };
 let cachedToken: CachedToken | null = null;
@@ -46,6 +48,7 @@ type DraftOrderInput = {
   customerEmail: string;
   customerPhone: string;
   customerAddress: string;
+  shippingAddress?: ShippingAddressParts | null;
   customerMessage: string;
   products: OrderProduct[];
   paymentMethod?: "bank_transfer" | "placeholder" | "review" | null;
@@ -63,25 +66,42 @@ function splitName(full: string) {
   return { first: parts[0], last: parts.slice(1).join(" ") };
 }
 
-function parseAddress(raw: string, phone: string) {
-  const lines = raw.split(/\r?\n|,/).map((line) => line.trim()).filter(Boolean);
-  const [address_1 = raw.trim() || "Unknown", ...rest] = lines;
-  const address_2 = rest.length > 1 ? rest.slice(0, rest.length - 1).join(", ") : undefined;
-  const last = rest[rest.length - 1] ?? "";
-  const postalMatch = last.match(/[A-Za-z]\d[A-Za-z]\s*\d[A-Za-z]\d/);
-  const postal_code = postalMatch ? postalMatch[0].replace(/\s+/g, " ").toUpperCase() : undefined;
-  const provinceMatch = last.match(/\b(ON|QC|BC|AB|MB|SK|NS|NB|NL|PE|YT|NT|NU)\b/i);
-  const province = provinceMatch ? provinceMatch[1].toUpperCase() : undefined;
-  const city = rest.length ? rest[0] : undefined;
+export type ShippingAddressParts = {
+  address_1: string;
+  address_2?: string;
+  city: string;
+  province?: string;
+  postal_code?: string;
+  country_code?: string;
+};
+
+function structuredAddress(parts: ShippingAddressParts, phone: string) {
   return {
-    address_1,
-    ...(address_2 ? { address_2 } : {}),
-    ...(city ? { city } : { city: "-" }),
-    ...(province ? { province } : {}),
-    ...(postal_code ? { postal_code } : {}),
-    country_code: "ca",
+    address_1: parts.address_1,
+    ...(parts.address_2 ? { address_2: parts.address_2 } : {}),
+    city: parts.city || "-",
+    ...(parts.province ? { province: parts.province } : {}),
+    ...(parts.postal_code ? { postal_code: parts.postal_code } : {}),
+    country_code: (parts.country_code || brand.country).toLowerCase(),
     phone,
   };
+}
+
+/**
+ * Fallback for orders that only carry the free-text address. Expects the
+ * shape checkout composes: street, [unit], "city, region, postcode", [country].
+ */
+function parseAddress(raw: string, phone: string) {
+  const lines = raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const [address_1 = raw.trim() || "Unknown", ...rest] = lines;
+  const localityIndex = rest.findIndex((line) => line.includes(","));
+  const locality = localityIndex >= 0 ? rest[localityIndex].split(",").map((p) => p.trim()) : [];
+  const address_2 = localityIndex > 0 ? rest.slice(0, localityIndex).join(", ") : undefined;
+  const [city, province, postal_code] = locality;
+  return structuredAddress(
+    { address_1, address_2, city: city || rest[0] || "-", province, postal_code },
+    phone,
+  );
 }
 
 async function adminFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -237,7 +257,9 @@ export async function createMedusaDraftOrder(input: DraftOrderInput) {
   if (!token) return { created: false, reason: "admin auth failed" } as const;
 
   const { first, last } = splitName(input.customerName);
-  const address = parseAddress(input.customerAddress, input.customerPhone);
+  const address = input.shippingAddress?.address_1
+    ? structuredAddress(input.shippingAddress, input.customerPhone)
+    : parseAddress(input.customerAddress, input.customerPhone);
 
   const items: Array<{
     variant_id?: string;
@@ -282,8 +304,8 @@ export async function createMedusaDraftOrder(input: DraftOrderInput) {
   const body = {
     email: input.customerEmail,
     region_id: REGION_ID,
-    sales_channel_id: SALES_CHANNEL_ID,
-    currency_code: "cad",
+    ...(SALES_CHANNEL_ID ? { sales_channel_id: SALES_CHANNEL_ID } : {}),
+    currency_code: brand.currencyCode.toLowerCase(),
     ...(input.customerId ? { customer_id: input.customerId } : {}),
     shipping_address: {
       first_name: first,

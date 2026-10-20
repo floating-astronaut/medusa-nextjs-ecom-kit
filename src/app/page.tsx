@@ -13,6 +13,9 @@ import { SiteHeader } from "@/components/site-header";
 import { brand } from "@/config/brand";
 import { getCategories, getFeaturedProducts, getProducts } from "@/data/products";
 import { getProductImage } from "@/lib/product-media";
+import { formatMoney, region } from "@/config/region";
+import { getFreeShippingThreshold } from "@/lib/shipping";
+import { testimonials } from "@/data/testimonials";
 
 /**
  * Build hero slides from a combination of:
@@ -55,9 +58,9 @@ function buildHeroSlides(featured: Awaited<ReturnType<typeof getFeaturedProducts
   if (Number.isFinite(threshold) && threshold > 0 && featured[1]) {
     slides.push({
       eyebrow: "Free shipping",
-      badge: `Over $${threshold}`,
-      title: `Free delivery on every order over $${threshold}.`,
-      body: "Same-day dispatch on orders paid before 2pm EST. Tracking emailed the moment it leaves us.",
+      badge: `Over ${formatMoney(threshold)}`,
+      title: `Free delivery on every order over ${formatMoney(threshold)}.`,
+      body: `Same-day dispatch on orders paid before ${region.dispatchCutoff}. Tracking emailed the moment it leaves us.`,
       ctaLabel: "Shop the catalog",
       ctaHref: "/shop",
       imageUrl: getProductImage({ slug: featured[1].slug, category: featured[1].category }),
@@ -86,7 +89,7 @@ const HOMEPAGE_FAQS = [
   {
     question: "How long does shipping take?",
     answer:
-      "Same-day dispatch before 2pm EST, most addresses arrive in 2–4 business days. Tracking is emailed once it leaves us.",
+      `Same-day dispatch before ${region.dispatchCutoff}, most addresses arrive in 2–4 business days. Tracking is emailed once it leaves us.`,
   },
   {
     question: "Is the packaging protective?",
@@ -131,7 +134,7 @@ export default async function Home() {
         <div className="relative mx-auto grid min-h-[calc(100svh-73px)] max-w-7xl gap-8 px-4 py-8 sm:gap-10 sm:px-6 sm:py-12 lg:min-h-[calc(100vh-77px)] lg:grid-cols-[1.1fr_0.9fr] lg:items-end lg:gap-14 lg:px-10 lg:py-18">
           <div className="max-w-5xl">
             <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-[rgba(20,33,25,0.1)] bg-white/70 px-3 py-2 text-[10px] uppercase tracking-[0.24em] text-[var(--color-muted)] sm:gap-3 sm:px-4 sm:text-[11px] sm:tracking-[0.32em]">
-              Free shipping over $50
+              Free shipping over {formatMoney(getFreeShippingThreshold())}
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-clay)]" />
               Everyday essentials, direct to door
             </div>
@@ -205,7 +208,7 @@ export default async function Home() {
               },
               {
                 title: `${brand.countryName}-wide`,
-                body: "Same-day dispatch on orders paid before 2pm EST",
+                body: `Same-day dispatch on orders paid before ${region.dispatchCutoff}`,
                 icon: (
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M3 13h11l2-4h5v8h-3" />
@@ -380,7 +383,7 @@ export default async function Home() {
               {
                 step: "03",
                 title: "We ship carefully",
-                body: "Orders paid before 2pm EST dispatch same-day in plain, sealed parcels. Tracking sent by email.",
+                body: `Orders paid before ${region.dispatchCutoff} dispatch same-day, carefully packed. Tracking sent by email.`,
               },
             ].map((item) => (
               <article key={item.step} className="rounded-[1.6rem] border border-[var(--color-line)] bg-white/70 p-6 sm:rounded-[2rem] sm:p-7">
@@ -409,7 +412,7 @@ export default async function Home() {
               {[
                 {
                   q: "How long does shipping take?",
-                  a: "Same-day dispatch before 2pm EST, most addresses arrive in 2–4 business days. Tracking is emailed once it leaves us.",
+                  a: `Same-day dispatch before ${region.dispatchCutoff}, most addresses arrive in 2–4 business days. Tracking is emailed once it leaves us.`,
                 },
                 {
                   q: "Is the packaging protective?",
@@ -437,48 +440,28 @@ export default async function Home() {
         </div>
       </section>
 
+      {testimonials.length > 0 ? (
       <section className="border-b border-[var(--color-line)] bg-[var(--color-paper)]">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-18 lg:px-10 lg:py-24">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
               <p className="text-[10px] uppercase tracking-[0.28em] text-[var(--color-olive)] sm:text-[11px] sm:tracking-[0.35em]">What customers say</p>
               <h2 className="mt-4 font-display text-4xl leading-none text-[var(--color-forest)] sm:mt-5 sm:text-5xl lg:text-6xl">
-                4.9 out of 5 from over 2,400 orders.
+                Loved by the people who shop here.
               </h2>
             </div>
-            <div className="flex items-center gap-3 text-[var(--color-forest)]">
-              <span className="text-2xl tracking-widest text-[var(--color-clay)]">★★★★★</span>
-              <span className="text-xs uppercase tracking-[0.22em] text-[var(--color-muted)]">Verified buyers</span>
-            </div>
+            {testimonials.some((review) => review.sample) ? (
+              <span className="text-xs uppercase tracking-[0.22em] text-[var(--color-muted)]">
+                Sample reviews · edit src/data/testimonials.ts
+              </span>
+            ) : null}
           </div>
           <div className="mt-10 grid gap-4 sm:mt-12 sm:gap-5 md:grid-cols-3">
-            {[
-              {
-                name: "Marcus T.",
-                location: "Toronto, ON",
-                rating: 5,
-                quote:
-                  "Ordered the tote bag on Tuesday, had it on my porch Thursday. Build quality is exactly what I was hoping for.",
-              },
-              {
-                name: "Alyssa K.",
-                location: "Calgary, AB",
-                rating: 5,
-                quote:
-                  "Checkout was fast and the packaging was clean and simple, just as promised. I'll be back.",
-              },
-              {
-                name: "Devon R.",
-                location: "Halifax, NS",
-                rating: 5,
-                quote:
-                  "Quality of the mug and notebook set is a step above what I expected for the price. Nice small details.",
-              },
-            ].map((review) => (
-              <article key={review.name} className="rounded-[1.6rem] border border-[var(--color-line)] bg-white/70 p-6 sm:rounded-[2rem] sm:p-7">
+            {testimonials.map((review, index) => (
+              <article key={`${review.name}-${index}`} className="rounded-[1.6rem] border border-[var(--color-line)] bg-white/70 p-6 sm:rounded-[2rem] sm:p-7">
                 <div className="flex items-center gap-2 text-[var(--color-clay)]">
-                  {Array.from({ length: review.rating }).map((_, index) => (
-                    <span key={index} aria-hidden>★</span>
+                  {Array.from({ length: review.rating }).map((_, star) => (
+                    <span key={star} aria-hidden>★</span>
                   ))}
                 </div>
                 <p className="mt-4 text-base leading-7 text-[var(--color-forest)] sm:text-lg sm:leading-8">
@@ -493,6 +476,7 @@ export default async function Home() {
           </div>
         </div>
       </section>
+      ) : null}
 
       <NewsletterSignup />
 

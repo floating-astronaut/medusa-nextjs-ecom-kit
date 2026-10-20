@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { region } from "@/config/region";
 
 type PhotonFeature = {
   type: "Feature";
@@ -44,35 +45,13 @@ type Props = {
   onSelect: (parts: AddressParts) => void;
   placeholder?: string;
   countryFilter?: string;
-  /** Latitude bias for Photon. Defaults to Toronto. */
+  /** Optional latitude bias for Photon (NEXT_PUBLIC_ADDRESS_BIAS_LAT). */
   biasLat?: number;
-  /** Longitude bias for Photon. Defaults to Toronto. */
+  /** Optional longitude bias for Photon (NEXT_PUBLIC_ADDRESS_BIAS_LON). */
   biasLon?: number;
   className?: string;
   inputClassName?: string;
 };
-
-const PROVINCE_ABBR: Record<string, string> = {
-  Alberta: "AB",
-  "British Columbia": "BC",
-  Manitoba: "MB",
-  "New Brunswick": "NB",
-  "Newfoundland and Labrador": "NL",
-  "Nova Scotia": "NS",
-  "Northwest Territories": "NT",
-  Nunavut: "NU",
-  Ontario: "ON",
-  "Prince Edward Island": "PE",
-  Quebec: "QC",
-  Québec: "QC",
-  Saskatchewan: "SK",
-  Yukon: "YT",
-};
-
-function abbreviateProvince(name?: string) {
-  if (!name) return "";
-  return PROVINCE_ABBR[name] ?? name;
-}
 
 function featureToParts(feature: PhotonFeature): AddressParts {
   const props = feature.properties;
@@ -81,8 +60,8 @@ function featureToParts(feature: PhotonFeature): AddressParts {
     address_1: street || props.name || "",
     address_2: "",
     city: props.city || props.district || props.locality || "",
-    province: abbreviateProvince(props.state),
-    postal_code: (props.postcode || "").toUpperCase(),
+    province: props.state || "",
+    postal_code: props.postcode || "",
     country: props.country || "",
     countryCode: (props.countrycode || "").toUpperCase(),
   };
@@ -91,7 +70,7 @@ function featureToParts(feature: PhotonFeature): AddressParts {
 function featureToLabel(feature: PhotonFeature): string {
   const p = feature.properties;
   const street = [p.housenumber, p.street ?? p.name].filter(Boolean).join(" ").trim();
-  const tail = [p.city || p.district || p.locality, abbreviateProvince(p.state), p.postcode]
+  const tail = [p.city || p.district || p.locality, p.state, p.postcode]
     .filter(Boolean)
     .join(", ");
   return [street || p.name, tail].filter(Boolean).join(" · ");
@@ -102,9 +81,9 @@ export function AddressAutocomplete({
   onChange,
   onSelect,
   placeholder = "Start typing your address",
-  countryFilter = "ca",
-  biasLat = 43.6532,
-  biasLon = -79.3832,
+  countryFilter = region.countryCode.toLowerCase(),
+  biasLat = region.addressBias?.lat,
+  biasLon = region.addressBias?.lon,
   className,
   inputClassName,
 }: Props) {
@@ -146,9 +125,11 @@ export function AddressAutocomplete({
         url.searchParams.set("limit", "6");
         url.searchParams.set("lang", "en");
         if (countryFilter) url.searchParams.set("layer", "house");
-        // Geographic bias for Photon — defaults to Toronto so GTA results surface first
-        url.searchParams.set("lat", String(biasLat));
-        url.searchParams.set("lon", String(biasLon));
+        // Optional geographic bias so results near the store rank first
+        if (biasLat !== undefined && biasLon !== undefined) {
+          url.searchParams.set("lat", String(biasLat));
+          url.searchParams.set("lon", String(biasLon));
+        }
         const response = await fetch(url.toString(), { cache: "no-store" });
         if (!response.ok) throw new Error("photon failed");
         const data = (await response.json()) as PhotonResponse;

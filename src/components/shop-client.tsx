@@ -44,7 +44,7 @@ export function ShopClient({
       <section className="border-b border-[var(--color-line)] bg-[var(--color-paper)]">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-10 lg:py-20">
           <p className="text-[10px] uppercase tracking-[0.28em] text-[var(--color-olive)] sm:text-[11px] sm:tracking-[0.35em]">
-            The full menu
+            All products
           </p>
           <h1 className="mt-4 max-w-4xl font-display text-4xl leading-[0.96] text-[var(--color-forest)] sm:mt-5 sm:text-6xl lg:text-7xl">
             Everything on the shelf, right now.
@@ -56,7 +56,7 @@ export function ShopClient({
           <div className="mt-8 grid gap-4 lg:mt-10 lg:grid-cols-[1fr_0.38fr] lg:gap-5">
             <label className="rounded-[1.4rem] border border-[var(--color-line)] bg-white/70 px-4 py-4 shadow-[0_12px_30px_rgba(20,33,25,0.04)] sm:rounded-[1.6rem] sm:px-5">
               <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-muted)] sm:tracking-[0.24em]">
-                Search the menu
+                Search products
               </span>
               <input
                 value={searchQuery}

@@ -138,7 +138,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                 </h2>
               </div>
               <Link href="/shop" className="text-sm uppercase tracking-[0.2em] text-[var(--color-clay)] sm:tracking-[0.24em]">
-                View full menu
+                View all products
               </Link>
             </div>
             <div className="mt-10 grid gap-4 sm:mt-12 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">

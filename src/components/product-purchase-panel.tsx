@@ -5,6 +5,7 @@ import Link from "next/link";
 import { OrderButton } from "@/components/order-button";
 import type { Product } from "@/data/products";
 import { getDefaultPackageOption, getPackageOptions, getPackagePrice } from "@/lib/product-packaging";
+import { formatMoney } from "@/config/region";
 
 export function ProductPurchasePanel({ product }: { product: Product }) {
   const packageOptions = getPackageOptions(product);
@@ -17,7 +18,7 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
           <div>
             <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--color-muted)] sm:tracking-[0.3em]">Price</p>
-            <p className="mt-3 text-5xl font-semibold text-[var(--color-clay)] sm:mt-4 sm:text-6xl">${selectedPrice.toFixed(2)}</p>
+            <p className="mt-3 text-5xl font-semibold text-[var(--color-clay)] sm:mt-4 sm:text-6xl">{formatMoney(selectedPrice)}</p>
             {selectedPackage ? (
               <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">for {selectedPackage.label}</p>
             ) : null}
@@ -47,7 +48,7 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
                     }
                   >
                     <p className="text-base font-semibold text-[var(--color-forest)]">{option.label}</p>
-                    <p className="mt-1 text-xs text-[var(--color-muted)]">${getPackagePrice(product, option).toFixed(2)}</p>
+                    <p className="mt-1 text-xs text-[var(--color-muted)]">{formatMoney(getPackagePrice(product, option))}</p>
                   </button>
                 );
               })}

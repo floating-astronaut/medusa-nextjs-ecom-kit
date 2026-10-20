@@ -1,7 +1,10 @@
+import { formatMoney, region } from "@/config/region";
+import { getFreeShippingThreshold } from "@/lib/shipping";
+
 const MESSAGES = [
-  "Free shipping on orders over $150",
+  `Free shipping on orders over ${formatMoney(getFreeShippingThreshold())}`,
   "Secure checkout · multiple payment options",
-  "Same-day dispatch before 2pm EST",
+  `Same-day dispatch before ${region.dispatchCutoff}`,
   "Thoughtfully made · quality guaranteed",
 ];
 

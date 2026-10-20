@@ -17,7 +17,7 @@ instead of a blank page.
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
 
-**🔗 Live demo:** **[exotic420budz.com](https://exotic420budz.com/)** — a real store running on this exact stack.
+**[Use this template](https://github.com/floating-astronaut/medusa-nextjs-ecom-kit/generate)** to start your own store from a clean copy.
 
 </div>
 
@@ -224,9 +224,11 @@ the seams.
 | To change… | Edit |
 |---|---|
 | Store name, tagline, colours, currency, socials | `.env.local` / `.env` (see [`src/config/brand.ts`](src/config/brand.ts)) |
+| Shipping country, currency, locale, dispatch cutoff, free-shipping threshold | `NEXT_PUBLIC_BRAND_*` / `NEXT_PUBLIC_*SHIPPING*` in `.env.local` (see [`src/config/region.ts`](src/config/region.ts)). Keep the currency the same as your Medusa region's. |
+| Home page reviews | [`src/data/testimonials.ts`](src/data/testimonials.ts) — ships with labelled samples; replace them or empty the array |
 | Products | Medusa admin, or [`medusa/src/scripts/seed.ts`](medusa/src/scripts/seed.ts) |
 | Home / about / FAQ / policies copy | `src/app/*/page.tsx` |
-| Logo & imagery | `public/` |
+| Logo & imagery | `public/brand/logo-mark.svg`, `public/images/` |
 | Payment provider | [`src/app/api/payments/`](src/app/api/payments/) |
 
 Branding is intentionally env-driven — for most cosmetic changes you only touch

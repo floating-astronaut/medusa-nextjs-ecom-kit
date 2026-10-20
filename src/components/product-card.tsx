@@ -3,6 +3,7 @@ import Link from "next/link";
 import { OrderButton } from "@/components/order-button";
 import type { Product } from "@/data/products";
 import { getProductImage } from "@/lib/product-media";
+import { formatMoney } from "@/config/region";
 
 /** Pulls "6 pieces" out of a description if metadata wasn't set. */
 function inferPackInfo(product: Product): { count: string | null } {
@@ -86,17 +87,17 @@ export function ProductCard({ product }: { product: Product }) {
                   <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-muted)] sm:tracking-[0.24em]">Sale</p>
                   <div className="mt-1 flex items-baseline justify-end gap-2">
                     <span className="text-xs text-[var(--color-muted)] line-through">
-                      ${product.compareAtPrice!.toFixed(2)}
+                      {formatMoney(product.compareAtPrice!)}
                     </span>
                     <span className="text-2xl font-bold text-[var(--color-clay)] sm:text-3xl">
-                      ${product.price.toFixed(2)}
+                      {formatMoney(product.price)}
                     </span>
                   </div>
                 </>
               ) : (
                 <>
                   <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-muted)] sm:tracking-[0.24em]">From</p>
-                  <p className="mt-2 text-2xl font-semibold text-[var(--color-clay)] sm:text-3xl">${product.price.toFixed(2)}</p>
+                  <p className="mt-2 text-2xl font-semibold text-[var(--color-clay)] sm:text-3xl">{formatMoney(product.price)}</p>
                 </>
               )}
             </div>

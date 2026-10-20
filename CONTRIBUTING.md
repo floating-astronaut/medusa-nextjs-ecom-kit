@@ -5,7 +5,7 @@ Issues, feature ideas, and pull/merge requests are all welcome.
 
 This project is mirrored to two hosts — contribute wherever you're comfortable:
 
-- **GitHub:** https://github.com/Nuraveda-Labs/nuraveda-lab-medusa-nextjs-ecom-kit
+- **GitHub:** https://github.com/floating-astronaut/medusa-nextjs-ecom-kit
 - **GitLab:** https://gitlab.com/nuraveda-lab/nuraveda-lab-medusa-nextjs-ecom-kit
 
 By participating, you agree to abide by our

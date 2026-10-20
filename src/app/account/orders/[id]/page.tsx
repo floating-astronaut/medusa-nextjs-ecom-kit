@@ -3,11 +3,12 @@ import { redirect } from "next/navigation";
 import { AccountNav } from "@/components/account/account-nav";
 import { SiteHeader } from "@/components/site-header";
 import { getCurrentCustomer, getCustomerOrder } from "@/lib/medusa-customer";
+import { formatMoney, region } from "@/config/region";
 
 export const dynamic = "force-dynamic";
 
-function money(n: number, currency = "cad") {
-  return new Intl.NumberFormat("en-CA", { style: "currency", currency: currency.toUpperCase() }).format(n);
+function money(n: number, currency?: string) {
+  return formatMoney(n, currency);
 }
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -40,7 +41,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 </h1>
                 <p className="mt-3 text-sm text-[var(--color-muted)]">
                   Placed{" "}
-                  {new Date(order.created_at).toLocaleString("en-CA", {
+                  {new Date(order.created_at).toLocaleString(region.locale, {
                     dateStyle: "medium",
                     timeStyle: "short",
                   })}{" "}

@@ -1,6 +1,7 @@
 "use client";
 
 import { getFreeShippingThreshold } from "@/lib/shipping";
+import { formatMoney } from "@/config/region";
 
 type Props = {
   subtotal: number;
@@ -21,10 +22,10 @@ export function FreeShippingBar({ subtotal, variant = "drawer" }: Props) {
       <div className="rounded-[1.2rem] border border-[var(--color-line)] bg-white/80 p-5">
         <div className="flex items-center justify-between gap-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-olive)]">
-            {reached ? "Free shipping unlocked" : "Free shipping at $" + threshold.toFixed(0)}
+            {reached ? "Free shipping unlocked" : "Free shipping at " + formatMoney(threshold)}
           </p>
           <p className="text-xs font-semibold text-[var(--color-forest)]">
-            {reached ? "🎉 You're all set" : `$${remaining.toFixed(2)} to go`}
+            {reached ? "🎉 You're all set" : `${formatMoney(remaining)} to go`}
           </p>
         </div>
         <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-panel)]">
@@ -46,7 +47,7 @@ export function FreeShippingBar({ subtotal, variant = "drawer" }: Props) {
             <>🎉 Free shipping unlocked</>
           ) : (
             <>
-              <span className="text-[var(--color-clay)]">${remaining.toFixed(2)}</span> away from free shipping
+              <span className="text-[var(--color-clay)]">{formatMoney(remaining)}</span> away from free shipping
             </>
           )}
         </p>
