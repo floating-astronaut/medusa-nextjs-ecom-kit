@@ -25,6 +25,7 @@ instead of a blank page.
 
 ## Table of contents
 
+- [Screenshots](#screenshots)
 - [Why this kit](#why-this-kit)
 - [Features](#features)
 - [Architecture](#architecture)
@@ -36,6 +37,19 @@ instead of a blank page.
 - [Deployment](#deployment)
 - [Contributing](#contributing)
 - [License](#license)
+
+---
+
+## Screenshots
+
+The storefront running against the bundled seed data (`npm run seed`), with the default brand settings.
+
+| Desktop | Mobile |
+|---|---|
+| <img src="docs/screenshots/home-desktop.png" alt="Home page on desktop" width="560"> | <img src="docs/screenshots/home-mobile.png" alt="Home page on mobile" width="200"> |
+| <img src="docs/screenshots/shop-desktop.png" alt="Product grid on desktop" width="560"> | <img src="docs/screenshots/shop-mobile.png" alt="Product grid on mobile" width="200"> |
+| <img src="docs/screenshots/product-desktop.png" alt="Product page on desktop" width="560"> | <img src="docs/screenshots/product-mobile.png" alt="Product page on mobile" width="200"> |
+| <img src="docs/screenshots/checkout-desktop.png" alt="Checkout on desktop" width="560"> | <img src="docs/screenshots/checkout-mobile.png" alt="Checkout on mobile" width="200"> |
 
 ---
 
@@ -114,32 +128,53 @@ flowchart LR
 | Backend | Medusa 2.13 (headless commerce) |
 | Database | PostgreSQL |
 | Email | Nodemailer (any SMTP / transactional provider) |
-| Tooling | ESLint 9 · Corepack / pnpm (backend) · npm (storefront) |
+| Tooling | ESLint 9 · npm (pnpm also works for the backend) |
 
 ---
 
 ## Quick start
 
-**Prerequisites:** Node 20+, a PostgreSQL database, and (optionally) Redis.
+**Prerequisites:** Node 20+ and a PostgreSQL database. Redis is optional.
+
+**1. Backend (Medusa)** — in the `medusa/` folder:
 
 ```bash
-# 1. Backend (Medusa) — in the medusa/ folder
 cd medusa
-cp .env.template .env          # fill in DATABASE_URL etc.
+cp .env.template .env          # set DATABASE_URL to your Postgres database
 npm install
 npx medusa db:migrate
-npm run seed                   # loads the placeholder catalog
+npm run seed                   # sample US store: USD region + 8 products
+npx medusa user -e admin@example.com -p change_me   # admin login for /app
 npm run dev                    # Medusa on http://localhost:9000 (admin at /app)
+```
 
-# 2. Storefront (Next.js) — in a second terminal, from the repo root
-cp .env.example .env.local     # set MEDUSA_* keys from your Medusa instance
+The seed finishes by printing the IDs the storefront needs:
+
+```
+MEDUSA_PUBLISHABLE_KEY=pk_...
+MEDUSA_REGION_ID=reg_...
+NEXT_PUBLIC_MEDUSA_REGION_ID=reg_...
+MEDUSA_SALES_CHANNEL_ID=sc_...
+```
+
+**2. Storefront (Next.js)** — in a second terminal, from the repo root:
+
+```bash
+cp .env.example .env.local     # paste the four values above, plus the admin email/password
 npm install
 npm run dev                    # storefront on http://localhost:3000
 ```
 
-Get `MEDUSA_PUBLISHABLE_KEY` and `MEDUSA_REGION_ID` from the Medusa admin
-(**Settings → Publishable API Keys**, and **Settings → Regions**) and paste them
-into `.env.local`.
+The admin email and password go in `MEDUSA_ADMIN_EMAIL` / `MEDUSA_ADMIN_PASSWORD`;
+checkout uses them server-side to create orders. You can also find the key and
+region later in the Medusa admin (**Settings → Publishable API Keys** and
+**Settings → Regions**).
+
+**Selling somewhere other than the US?** Change `CURRENCY`, `COUNTRY` and
+`REGION_NAME` at the top of [`medusa/src/scripts/seed.ts`](medusa/src/scripts/seed.ts)
+before seeding, and set the matching `NEXT_PUBLIC_BRAND_CURRENCY`,
+`NEXT_PUBLIC_BRAND_COUNTRY` and `NEXT_PUBLIC_BRAND_LOCALE` in `.env.local`.
+Prices are in whole currency units (`28` = $28.00), as Medusa 2 expects.
 
 > 💡 `build-all.sh` builds both the backend and the storefront in one shot.
 
@@ -210,8 +245,9 @@ the seams.
 │       ├── modules/           # custom modules
 │       ├── subscribers/       # event subscribers (order lifecycle → email)
 │       ├── workflows/         # custom workflows
-│       └── scripts/seed.ts    # placeholder catalog seed
-├── public/                    # static assets / images
+│       └── scripts/seed.ts    # sample store: region, shipping, 8 products
+├── public/                    # logo and placeholder product images
+├── docs/screenshots/          # README screenshots
 ├── scripts/                   # ops helpers (deploy, stale-draft cleanup)
 ├── build-all.sh               # build backend + storefront
 └── .env.example               # storefront env template
@@ -233,6 +269,15 @@ the seams.
 
 Branding is intentionally env-driven — for most cosmetic changes you only touch
 `.env`, no code.
+
+### Known limitations
+
+- **One variant per product.** The storefront sells each product's first
+  variant and has no size or colour picker yet, so the sample catalog uses
+  single-variant products.
+- **No card payments out of the box.** Checkout offers bank transfer and a demo
+  payment; wire a real provider before taking money (see
+  [Going live](#going-live)).
 
 ---
 

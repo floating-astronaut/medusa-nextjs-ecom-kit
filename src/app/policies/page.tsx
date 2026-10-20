@@ -5,7 +5,7 @@ import { brand } from "@/config/brand";
 const policyBlocks = [
   {
     title: "Payments",
-    body: "We accept all major credit and debit cards through our hosted checkout. Orders are only approved after payment is confirmed.",
+    body: "We accept the payment options shown at checkout. Orders are only approved after payment is confirmed.",
   },
   {
     title: "Shipping and delivery",

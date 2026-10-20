@@ -52,7 +52,6 @@ export async function POST(request: Request) {
     "customerEmail",
     "customerPhone",
     "customerAddress",
-    "customerMessage",
   ];
 
   for (const field of requiredFields) {
@@ -82,7 +81,7 @@ export async function POST(request: Request) {
     customerPhone: body.customerPhone,
     customerAddress: body.customerAddress,
     shippingAddress: normalizeShippingAddress(body.shippingAddress),
-    customerMessage: body.customerMessage,
+    customerMessage: String(body.customerMessage ?? "").slice(0, 2000),
     subtotal,
     shippingFee,
     freeShipping: shippingFee === 0,

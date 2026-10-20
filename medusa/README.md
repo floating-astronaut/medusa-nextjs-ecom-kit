@@ -1,76 +1,76 @@
-<p align="center">
-  <a href="https://www.medusajs.com">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/59018053/229103275-b5e482bb-4601-46e6-8142-244f531cebdb.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    <img alt="Medusa logo" src="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    </picture>
-  </a>
-</p>
-<h1 align="center">
-  Medusa
-</h1>
+# Backend (Medusa 2)
 
-<h4 align="center">
-  <a href="https://docs.medusajs.com">Documentation</a> |
-  <a href="https://www.medusajs.com">Website</a>
-</h4>
+The commerce backend for this kit: products, prices, regions, carts, orders,
+customers and the admin dashboard. The Next.js storefront in the repo root
+talks to it through the Store API (with a publishable key) and the Admin API
+(for draft orders at checkout).
 
-<p align="center">
-  Building blocks for digital commerce
-</p>
-<p align="center">
-  <a href="https://github.com/medusajs/medusa/blob/master/CONTRIBUTING.md">
-    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="PRs welcome!" />
-  </a>
-    <a href="https://www.producthunt.com/posts/medusa"><img src="https://img.shields.io/badge/Product%20Hunt-%231%20Product%20of%20the%20Day-%23DA552E" alt="Product Hunt"></a>
-  <a href="https://discord.gg/xpCwq3Kfn8">
-    <img src="https://img.shields.io/badge/chat-on%20discord-7289DA.svg" alt="Discord Chat" />
-  </a>
-  <a href="https://twitter.com/intent/follow?screen_name=medusajs">
-    <img src="https://img.shields.io/twitter/follow/medusajs.svg?label=Follow%20@medusajs" alt="Follow @medusajs" />
-  </a>
-</p>
+## Run it locally
 
-## Compatibility
+You need Node 20+ and a PostgreSQL database. Redis is optional; without it
+Medusa uses its in-memory event bus and cache, which is fine for development.
 
-This starter is compatible with versions >= 2 of `@medusajs/medusa`. 
+```bash
+cp .env.template .env          # set DATABASE_URL
+npm install
+npx medusa db:migrate
+npm run seed
+npx medusa user -e admin@example.com -p change_me
+npm run dev
+```
 
-## Getting Started
+- API: http://localhost:9000
+- Admin dashboard: http://localhost:9000/app (sign in with the user you created)
 
-Visit the [Quickstart Guide](https://docs.medusajs.com/learn/installation) to set up a server.
+## What the seed creates
 
-Visit the [Docs](https://docs.medusajs.com/learn/installation#get-started) to learn more about our system requirements.
+[`src/scripts/seed.ts`](src/scripts/seed.ts) sets up a complete sample store:
 
-## What is Medusa
+| Piece | Value |
+|---|---|
+| Currency | USD (store default) |
+| Region | United States, system payment provider, tax region |
+| Stock location | Main Warehouse, New York, linked to manual fulfillment |
+| Shipping | Standard ($15) and Express ($30) for the US |
+| Sales channel | Default Sales Channel, linked to a publishable key |
+| Categories | Apparel, Accessories, Home, Stationery |
+| Products | 8 single-variant products, 1,000 units each in stock |
 
-Medusa is a set of commerce modules and tools that allow you to build rich, reliable, and performant commerce applications without reinventing core commerce logic. The modules can be customized and used to build advanced ecommerce stores, marketplaces, or any product that needs foundational commerce primitives. All modules are open-source and freely available on npm.
+Each product's `metadata` carries `category`, `badge`, `stock` and optionally
+`pack_count`; the storefront reads these for the product cards.
 
-Learn more about [Medusa’s architecture](https://docs.medusajs.com/learn/introduction/architecture) and [commerce modules](https://docs.medusajs.com/learn/fundamentals/modules/commerce-modules) in the Docs.
+When it finishes, the seed prints `MEDUSA_PUBLISHABLE_KEY`, `MEDUSA_REGION_ID`,
+`NEXT_PUBLIC_MEDUSA_REGION_ID` and `MEDUSA_SALES_CHANNEL_ID` for the
+storefront's `.env.local`.
 
-## Build with AI Agents
+To seed a different country or currency, edit `CURRENCY`, `COUNTRY`,
+`REGION_NAME` and `WAREHOUSE` at the top of the file. Prices are in whole
+currency units (`28` = $28.00). The seed is meant for an empty database; run
+it once.
 
-### Claude Code Plugin
+## Customizations in this folder
 
-If you use AI agents like Claude Code, check out the [medusa-dev Claude Code plugin](https://github.com/medusajs/medusa-claude-plugins).
+| Path | What it does |
+|---|---|
+| `src/subscribers/` | Order lifecycle events → webhook to the storefront, which sends the customer emails |
+| `src/api/` | Example custom routes (`/store/custom`, `/admin/custom`) to build on |
+| `src/workflows/`, `src/modules/`, `src/links/`, `src/jobs/` | Empty extension points, each with Medusa's README |
+| `src/admin/` | Admin dashboard extensions (i18n scaffold) |
+| `integration-tests/http/` | HTTP integration tests, starting with a health check |
 
-### Other Agents
+## Scripts
 
-If you use AI agents other than Claude Code, copy the [skills directory](https://github.com/medusajs/medusa-claude-plugins/tree/main/plugins/medusa-dev/skills) into your agent's relevant `skills` directory.
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start Medusa with reload |
+| `npm run build` | Build the server and admin into `.medusa/` (also generates the types the seed imports) |
+| `npm run start` | Start the built server |
+| `npm run seed` | Load the sample store |
+| `npm run test:integration:http` | Run the HTTP integration tests |
 
-### MCP Server
+## Deploying
 
-You can also add the MCP server `https://docs.medusajs.com/mcp` to your AI agents to answer questions related to Medusa. The `medusa-dev` Claude Code plugin includes this MCP server by default.
-
-## Community & Contributions
-
-The community and core team are available in [GitHub Discussions](https://github.com/medusajs/medusa/discussions), where you can ask for support, discuss roadmap, and share ideas.
-
-Join our [Discord server](https://discord.com/invite/medusajs) to meet other community members.
-
-## Other channels
-
-- [GitHub Issues](https://github.com/medusajs/medusa/issues)
-- [Twitter](https://twitter.com/medusajs)
-- [LinkedIn](https://www.linkedin.com/company/medusajs)
-- [Medusa Blog](https://medusajs.com/blog/)
+Run Medusa on any Node host with a managed PostgreSQL and, ideally, Redis.
+Set strong `JWT_SECRET` and `COOKIE_SECRET` values and point `STORE_CORS`,
+`ADMIN_CORS` and `AUTH_CORS` at your real domains. See the
+[Medusa deployment docs](https://docs.medusajs.com/learn/deployment).

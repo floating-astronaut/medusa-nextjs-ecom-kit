@@ -50,7 +50,7 @@ export function ShopClient({
             Everything on the shelf, right now.
           </h1>
           <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--color-muted)] sm:mt-6 sm:text-base sm:leading-8">
-            Filter by category, search for something specific, or scroll the whole catalog. Pick your size and options on the product page.
+            Filter by category, search for something specific, or scroll the whole catalog.
           </p>
 
           <div className="mt-8 grid gap-4 lg:mt-10 lg:grid-cols-[1fr_0.38fr] lg:gap-5">

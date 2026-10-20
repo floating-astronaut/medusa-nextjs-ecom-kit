@@ -99,7 +99,7 @@ const HOMEPAGE_FAQS = [
   {
     question: "Which payment methods do you accept?",
     answer:
-      "All major credit and debit cards through our hosted checkout.",
+      "The payment options shown at checkout. Your order is approved once payment is confirmed.",
   },
   {
     question: "What if my order gets lost?",
@@ -145,7 +145,7 @@ export default async function Home() {
               Everyday essentials — curated, not crowded.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--color-muted)] sm:mt-7 sm:text-lg sm:leading-8 lg:text-xl">
-              A tight shelf of the products we actually use. Pick your size and color, then check out securely by card.
+              A tight shelf of the products we actually use. Pick what you like, then check out in a few steps.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:gap-4">
               <Link
@@ -196,7 +196,7 @@ export default async function Home() {
               },
               {
                 title: "Secure checkout",
-                body: "Card payments processed through a trusted, hosted checkout",
+                body: "Secure checkout with clear payment options",
                 icon: (
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="9" />
@@ -373,12 +373,12 @@ export default async function Home() {
               {
                 step: "01",
                 title: "Pick your items",
-                body: "Browse the catalog, choose your size or option, and add to cart. No account required.",
+                body: "Browse the catalog and add what you like to your cart. No account required.",
               },
               {
                 step: "02",
                 title: "Check out securely",
-                body: "Pay by card through our hosted checkout — fast, simple, and encrypted end to end.",
+                body: "Choose a payment option at checkout. Your details are encrypted end to end.",
               },
               {
                 step: "03",
@@ -420,7 +420,7 @@ export default async function Home() {
                 },
                 {
                   q: "Which payment methods do you accept?",
-                  a: "All major credit and debit cards through our hosted checkout.",
+                  a: "The payment options shown at checkout. Your order is approved once payment is confirmed.",
                 },
                 {
                   q: "What if my order gets lost?",
@@ -490,7 +490,7 @@ export default async function Home() {
                   Build the cart. Check out securely. Get it shipped fast.
                 </h2>
                 <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--color-muted)] sm:mt-6 sm:text-base sm:leading-8">
-                  Build the cart, confirm the address, and check out securely by card.
+                  Build the cart, confirm the address, and check out securely.
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row lg:justify-end lg:gap-4">
