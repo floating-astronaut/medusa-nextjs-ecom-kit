@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef } from "react";
 import { FreeShippingBar } from "@/components/free-shipping-bar";
 import { useOrder } from "@/components/order-provider";
+import { formatMoney } from "@/config/region";
 
 const HIGHLIGHT_WINDOW_MS = 4000;
-const CATEGORY_ORDER = ["Flower", "Pre-Rolls", "Vapes & Concentrates", "Edibles"];
+const CATEGORY_ORDER = ["Apparel", "Accessories", "Home", "Stationery"];
 const FOCUSABLE_SELECTOR = [
   'a[href]',
   'button:not([disabled])',
@@ -165,9 +166,9 @@ export function CartDrawer() {
             {items.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center rounded-[1.6rem] border border-dashed border-[var(--color-line)] bg-white/70 px-6 py-10 text-center">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--color-olive)]">Cart is empty</p>
-                <h3 className="mt-4 font-display text-4xl leading-none text-[var(--color-forest)]">Start with the menu.</h3>
+                <h3 className="mt-4 font-display text-4xl leading-none text-[var(--color-forest)]">Start with the shop.</h3>
                 <p className="mt-4 max-w-sm text-sm leading-7 text-[var(--color-muted)]">
-                  Add flower, edibles, pre-rolls, or concentrates to begin checkout.
+                  Add something you love to begin checkout.
                 </p>
                 <Link
                   href="/shop"
@@ -255,7 +256,7 @@ export function CartDrawer() {
                               <div className="text-right">
                                 <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-muted)]">Line total</p>
                                 <p className="mt-1 text-2xl font-semibold text-[var(--color-clay)]">
-                                  ${(item.price * item.quantity).toFixed(2)}
+                                  {formatMoney(item.price * item.quantity)}
                                 </p>
                               </div>
                             </div>
@@ -273,7 +274,7 @@ export function CartDrawer() {
             <div className="flex items-end justify-between gap-4">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--color-muted)]">Subtotal</p>
-                <p className="mt-1 text-3xl font-semibold text-[var(--color-clay)]">${total.toFixed(2)}</p>
+                <p className="mt-1 text-3xl font-semibold text-[var(--color-clay)]">{formatMoney(total)}</p>
               </div>
               <p className="text-right text-[11px] leading-5 text-[var(--color-muted)]">
                 {itemCount} item{itemCount === 1 ? "" : "s"} in cart
@@ -293,7 +294,7 @@ export function CartDrawer() {
                 onClick={() => setCartDrawerOpen(false)}
                 className="rounded-full bg-[var(--color-forest)] px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.2em] !text-white"
               >
-                Checkout · ${total.toFixed(2)}
+                Checkout · {formatMoney(total)}
               </Link>
             </div>
           </div>

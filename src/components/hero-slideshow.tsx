@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { formatMoney } from "@/config/region";
 
 export type HeroSlide = {
   /** Small uppercase eyebrow above the title (e.g. "Drop of the week") */
@@ -192,7 +193,7 @@ function SlideCard({
               <>
                 <p className="text-[10px] uppercase tracking-[0.22em] text-white/60">From</p>
                 <p className="text-2xl font-semibold text-white sm:text-3xl">
-                  ${slide.price.amount.toFixed(2)}
+                  {formatMoney(slide.price.amount)}
                 </p>
                 {(() => {
                   const stock = Number(slide.price?.stock);

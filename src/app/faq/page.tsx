@@ -2,6 +2,7 @@ import { PageHero } from "@/components/page-hero";
 import { JsonLd, faqSchema } from "@/components/seo/jsonld";
 import { SiteHeader } from "@/components/site-header";
 import { brand } from "@/config/brand";
+import { region } from "@/config/region";
 
 const support = brand.supportEmail;
 const isShipping = brand.fulfillment === "ship";
@@ -10,7 +11,7 @@ const shippingAnswers = isShipping
   ? [
       {
         question: `How long does shipping take across ${brand.countryName}?`,
-        answer: `We dispatch the same business day on orders paid before 2pm EST. Most ${brand.countryName} addresses receive their parcel in 2–4 business days via standard carriers, with full tracking emailed once the parcel leaves our facility.`,
+        answer: `We dispatch the same business day on orders paid before ${region.dispatchCutoff}. Most ${brand.countryName} addresses receive their parcel in 2–4 business days via standard carriers, with full tracking emailed once the parcel leaves our facility.`,
       },
       {
         question: "How is my order packaged?",

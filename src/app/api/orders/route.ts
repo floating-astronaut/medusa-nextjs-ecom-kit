@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { randomBytes, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { sendOrderEmails } from "@/lib/mailer";
-import { createMedusaDraftOrder } from "@/lib/medusa-admin";
+import { createMedusaDraftOrder, type ShippingAddressParts } from "@/lib/medusa-admin";
 import { getCurrentCustomer } from "@/lib/medusa-customer";
 import { computeShippingFee } from "@/lib/shipping";
 
@@ -20,6 +20,24 @@ function normalizePaymentMethod(value: unknown): PaymentMethod {
 function generatePaymentReference() {
   const n = randomBytes(4).readUInt32BE(0) % 100_000_000;
   return n.toString().padStart(8, "0");
+}
+
+function normalizeShippingAddress(value: unknown): ShippingAddressParts | null {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Record<string, unknown>;
+  const field = (key: string, max = 200) =>
+    typeof raw[key] === "string" ? (raw[key] as string).trim().slice(0, max) : "";
+  const address_1 = field("address_1");
+  if (!address_1) return null;
+  const countryCode = field("country_code", 2);
+  return {
+    address_1,
+    address_2: field("address_2") || undefined,
+    city: field("city", 120),
+    province: field("province", 120) || undefined,
+    postal_code: field("postal_code", 20) || undefined,
+    country_code: /^[a-z]{2}$/i.test(countryCode) ? countryCode.toLowerCase() : undefined,
+  };
 }
 
 export async function POST(request: Request) {
@@ -63,6 +81,7 @@ export async function POST(request: Request) {
     customerEmail: body.customerEmail,
     customerPhone: body.customerPhone,
     customerAddress: body.customerAddress,
+    shippingAddress: normalizeShippingAddress(body.shippingAddress),
     customerMessage: body.customerMessage,
     subtotal,
     shippingFee,

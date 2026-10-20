@@ -3,11 +3,12 @@ import { redirect } from "next/navigation";
 import { AccountNav } from "@/components/account/account-nav";
 import { SiteHeader } from "@/components/site-header";
 import { getCurrentCustomer, getCustomerOrders } from "@/lib/medusa-customer";
+import { formatMoney, region } from "@/config/region";
 
 export const dynamic = "force-dynamic";
 
-function money(n: number, currency = "cad") {
-  return new Intl.NumberFormat("en-CA", { style: "currency", currency: currency.toUpperCase() }).format(n);
+function money(n: number, currency?: string) {
+  return formatMoney(n, currency);
 }
 
 export default async function OrdersPage() {
@@ -36,7 +37,7 @@ export default async function OrdersPage() {
                   href="/shop"
                   className="mt-5 inline-flex rounded-full bg-[var(--color-forest)] px-5 py-3 text-xs font-semibold uppercase tracking-[0.22em] !text-white"
                 >
-                  Shop the menu
+                  Browse the shop
                 </Link>
               </div>
             ) : (
@@ -50,7 +51,7 @@ export default async function OrdersPage() {
                     <div>
                       <p className="text-sm font-semibold text-[var(--color-forest)]">Order #{order.display_id}</p>
                       <p className="mt-1 text-xs text-[var(--color-muted)]">
-                        {new Date(order.created_at).toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" })} · {order.items?.length ?? 0} items
+                        {new Date(order.created_at).toLocaleDateString(region.locale, { year: "numeric", month: "short", day: "numeric" })} · {order.items?.length ?? 0} items
                       </p>
                     </div>
                     <div className="flex items-center gap-4">

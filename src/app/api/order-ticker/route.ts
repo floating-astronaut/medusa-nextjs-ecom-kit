@@ -10,6 +10,7 @@ type OrderRecord = {
   createdAt?: string;
   customerName?: string;
   customerAddress?: string;
+  shippingAddress?: { city?: string } | null;
   products?: Array<{ name?: string; category?: string }>;
 };
 
@@ -45,7 +46,7 @@ export async function GET() {
         const product = record.products?.[0]?.name ?? "an order";
         entries.push({
           name: firstName(record.customerName),
-          city: cityFromAddress(record.customerAddress),
+          city: record.shippingAddress?.city || cityFromAddress(record.customerAddress),
           product,
           createdAt: record.createdAt,
         });

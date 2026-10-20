@@ -1,5 +1,6 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import { brand } from "@/config/brand";
+import { formatMoney, region } from "@/config/region";
 
 type MailerConfig = {
   host: string;
@@ -104,13 +105,13 @@ function firstName(name: string) {
 }
 
 function money(value: number) {
-  return `$${value.toFixed(2)}`;
+  return formatMoney(value);
 }
 
 function formatDate(iso: string) {
   const d = new Date(iso);
   try {
-    return d.toLocaleString("en-CA", {
+    return d.toLocaleString(region.locale, {
       dateStyle: "medium",
       timeStyle: "short",
     });
@@ -123,8 +124,7 @@ function renderOrderLines(order: OrderPayload) {
   return order.products
     .map((item) => {
       const size = item.packageLabel ? ` · ${item.packageLabel}` : "";
-      const lineTotal = (item.price * item.quantity).toFixed(2);
-      return `• ${item.quantity}× ${item.name}${size} — $${lineTotal}`;
+      return `• ${item.quantity}× ${item.name}${size} — ${money(item.price * item.quantity)}`;
     })
     .join("\n");
 }
@@ -218,7 +218,7 @@ function bankTransferBlockHtml(order: OrderPayload) {
               </tr>
             </table>
             <div style="margin-top:14px;padding-top:14px;border-top:1px dashed ${COLORS.line};font-size:12px;line-height:1.6;color:${COLORS.muted};">
-              <strong style="color:${COLORS.forest};">Important:</strong> include the reference number in the transfer details so we can match your payment to this order. Once the transfer confirms, we'll ship same-day (before 2pm EST).
+              <strong style="color:${COLORS.forest};">Important:</strong> include the reference number in the transfer details so we can match your payment to this order. Once the transfer confirms, we'll ship same-day (before ${region.dispatchCutoff}).
               <br /><br />
               Do not reply to the payment address — it's a receive-only auto-deposit inbox. Questions go to <a href="mailto:${brand.supportEmail}" style="color:${COLORS.forest};">${brand.supportEmail}</a>.
             </div>
@@ -291,8 +291,8 @@ function customerEmailHtml(order: OrderPayload, siteUrl: string) {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;">
           ${[
             { n: "01", t: "We confirm payment", b: "For bank transfer we watch for your payment to land. Otherwise we'll send payment details shortly." },
-            { n: "02", t: "We pack it discreetly", b: "Sealed, plain label, no branding on the outside." },
-            { n: "03", t: "You get tracking", b: "Same-day dispatch before 2pm EST. Tracking emailed the moment it leaves us." },
+            { n: "02", t: "We pack your order", b: brand.packagingPolicy },
+            { n: "03", t: "You get tracking", b: "Tracking is emailed the moment your order leaves us." },
           ]
             .map(
               (step) => `
@@ -569,7 +569,7 @@ export function sendShippedEmail(input: ShippedInput) {
     subject: `[${label}] Shipped${tracking ? ` · ${tracking}` : ""}`,
     heading: "Your order is on the way.",
     preheader: `${label} shipped${tracking ? ` · ${tracking}` : ""}`,
-    intro: `Good news, ${first} — ${label} just left us. Most Canadian addresses arrive in 2–4 business days.`,
+    intro: `Good news, ${first} — ${label} just left us. ${brand.shippingPolicy}`,
     extraHtml: trackingHtml,
     cta: input.trackingUrl
       ? { label: "Track parcel", href: input.trackingUrl }
@@ -577,7 +577,7 @@ export function sendShippedEmail(input: ShippedInput) {
     textBody: [
       `Hey ${first},`,
       "",
-      `${label} just shipped. Most Canadian addresses arrive in 2–4 business days.`,
+      `${label} just shipped. ${brand.shippingPolicy}`,
       tracking ? `Tracking: ${tracking}${input.trackingCompany ? ` (${input.trackingCompany})` : ""}` : "",
       input.trackingUrl ? `Track: ${input.trackingUrl}` : "",
       "",
@@ -628,7 +628,7 @@ export function sendWelcomeEmail(input: { email: string }) {
     preheader: `Your ${discount} welcome code: ${code}`,
     intro: `Thanks for joining — here's your code for ${discount} on your first order. We'll only email you when there's something good (drops, restocks, members-only deals). No daily noise.`,
     extraHtml,
-    cta: { label: "Shop the menu", href: `${brand.siteUrl}/shop` },
+    cta: { label: "Browse the shop", href: `${brand.siteUrl}/shop` },
     textBody: [
       "Welcome to the ${brand.name} inside list.",
       "",
@@ -696,7 +696,7 @@ export async function sendOrderEmails(order: OrderPayload) {
           `  Reference: ${order.paymentReference}  (include this in the transfer details)`,
           `  Security answer: ${order.paymentReference}`,
           "",
-          "We ship same-day after the transfer confirms (before 2pm EST cut-off).",
+          `We ship same-day after the transfer confirms (before ${region.dispatchCutoff} cut-off).`,
         ]
       : [];
 
@@ -719,12 +719,12 @@ export async function sendOrderEmails(order: OrderPayload) {
     "",
     "What happens next:",
     "1. We confirm payment.",
-    "2. We pack it discreetly — sealed, plain label.",
-    "3. You get tracking — same-day dispatch before 2pm EST.",
+    `2. We pack your order. ${brand.packagingPolicy}`,
+    "3. You get tracking the moment it ships.",
     "",
     `Questions? Reply to this email or reach us at ${brand.supportEmail}.`,
     "",
-    `Back to the menu: ${config.siteUrl}/shop`,
+    `Back to the shop: ${config.siteUrl}/shop`,
     "",
     "${brand.name}",
   ].join("\n");

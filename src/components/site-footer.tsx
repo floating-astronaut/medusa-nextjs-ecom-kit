@@ -15,9 +15,8 @@ export function SiteFooter() {
               {brand.description}
             </p>
             <div className="mt-5 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-olive)]">
-              <span className="rounded-full border border-[var(--color-line)] bg-white/70 px-3 py-1.5">Lab tested</span>
-              <span className="rounded-full border border-[var(--color-line)] bg-white/70 px-3 py-1.5">
-                {brand.fulfillment === "click-and-collect" ? "Click-and-collect" : "Discreet shipping"}
+                            <span className="rounded-full border border-[var(--color-line)] bg-white/70 px-3 py-1.5">
+                {brand.fulfillment === "click-and-collect" ? "Click-and-collect" : "Tracked shipping"}
               </span>
               <span className="rounded-full border border-[var(--color-line)] bg-white/70 px-3 py-1.5">Secure checkout</span>
             </div>
@@ -36,12 +35,10 @@ export function SiteFooter() {
             <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--color-muted)]">Shop</p>
             <ul className="mt-4 grid gap-3 text-sm text-[var(--color-forest)]">
               <li><Link href="/shop">All products</Link></li>
-              <li><Link href="/shop?category=Flower">Flower</Link></li>
-              <li><Link href="/shop?category=Edibles">Edibles</Link></li>
-              <li><Link href="/shop?category=Pre-Rolls">Pre-rolls</Link></li>
-              <li>
-                <Link href="/shop?category=Vapes+%26+Concentrates">Vapes &amp; concentrates</Link>
-              </li>
+              <li><Link href="/shop?category=Apparel">Apparel</Link></li>
+              <li><Link href="/shop?category=Accessories">Accessories</Link></li>
+              <li><Link href="/shop?category=Home">Home</Link></li>
+              <li><Link href="/shop?category=Stationery">Stationery</Link></li>
             </ul>
           </div>
 

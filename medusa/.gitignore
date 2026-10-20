@@ -24,3 +24,6 @@ build
 !.yarn/versions
 
 .medusa
+# Medusa local file uploads land here at runtime — never commit them
+/static/*
+!/static/.gitkeep

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>Storefront logo mark — replace with your own</title>
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="#21352a"/>
+  <path d="M20 26h24l-2 20a4 4 0 0 1-4 3.6H26a4 4 0 0 1-4-3.6L20 26Z" fill="#fbf7f0"/>
+  <path d="M26 26v-3a6 6 0 0 1 12 0v3" fill="none" stroke="#fbf7f0" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="32" cy="37" r="3.5" fill="#a85d3b"/>
+</svg>

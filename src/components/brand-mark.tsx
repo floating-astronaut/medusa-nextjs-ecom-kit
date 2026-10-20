@@ -8,9 +8,9 @@ type BrandMarkProps = {
 };
 
 export function BrandMark({ compact = false, href = "/" }: BrandMarkProps) {
-  // Compact = header mode (show only leaf + wordmark, no tagline; wordmark
+  // Compact = header mode (show only logo + wordmark, no tagline; wordmark
   // hides on the smallest screens to leave room for cart + hamburger).
-  // Full   = footer mode (leaf + wordmark always; tagline only on sm+).
+  // Full   = footer mode (logo + wordmark always; tagline only on sm+).
   return (
     <Link
       href={href}

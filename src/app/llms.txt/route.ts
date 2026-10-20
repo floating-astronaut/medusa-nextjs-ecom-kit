@@ -5,6 +5,7 @@
  */
 import { brand } from "@/config/brand";
 import { getProducts } from "@/data/products";
+import { formatMoney, region } from "@/config/region";
 
 const SITE_URL = brand.siteUrl;
 
@@ -17,7 +18,7 @@ export async function GET() {
     const products = await getProducts();
     productLines = products.slice(0, 80).map(
       (p) =>
-        `- [${p.name}](${SITE_URL}/shop/${p.slug}) — ${p.category} · ${brand.currencyCode}$${p.price.toFixed(2)}`,
+        `- [${p.name}](${SITE_URL}/shop/${p.slug}) — ${p.category} · ${formatMoney(p.price)}`,
     );
   } catch {
     productLines = [];
@@ -27,7 +28,7 @@ export async function GET() {
     brand.fulfillment === "click-and-collect"
       ? `- Click-and-collect only: customer orders online, picks up in store at ${brand.city}, ${brand.province}
 - Order is held for 48 hours after confirmation`
-      : `- Same-day dispatch on orders paid before 2pm EST
+      : `- Same-day dispatch on orders paid before ${region.dispatchCutoff}
 - Most ${brand.countryName} addresses receive parcels in 2–4 business days
 - Tracking emailed once the parcel leaves our facility
 - Ships in recyclable packaging
