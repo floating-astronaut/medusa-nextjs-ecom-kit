@@ -73,6 +73,9 @@ jobs:
           JWT_SECRET: ci-only
           COOKIE_SECRET: ci-only
         run: |
+          set -o pipefail
+          # db:create reads DATABASE_URL from .env, not the environment
+          printf 'DATABASE_URL=%s\n' "$DATABASE_URL" > .env
           npx medusa db:create --db medusa_ci_seed --no-interactive
           npx medusa db:migrate
           npm run seed 2>&1 | tee seed.log
