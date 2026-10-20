@@ -55,6 +55,125 @@ const updateStoreCurrencies = createWorkflow(
   }
 );
 
+// ── Store settings ─────────────────────────────────────────────────────────
+// Keep these in step with the storefront's .env.local:
+//   CURRENCY → NEXT_PUBLIC_BRAND_CURRENCY, COUNTRY → NEXT_PUBLIC_BRAND_COUNTRY
+// Prices below are in major units (28 = $28.00), as Medusa 2 expects.
+const CURRENCY = "usd";
+const COUNTRY = "us";
+const REGION_NAME = "United States";
+const WAREHOUSE = { name: "Main Warehouse", city: "New York", country_code: "US" };
+
+// Category names must match the storefront's (footer links, placeholder images).
+const CATEGORIES = ["Apparel", "Accessories", "Home", "Stationery"] as const;
+type Category = (typeof CATEGORIES)[number];
+
+type SeedProduct = {
+  title: string;
+  handle: string;
+  category: Category;
+  description: string;
+  price: number;
+  weight: number;
+  badge: string;
+  stock: number;
+  packCount?: string;
+  /**
+   * One option with several values (e.g. sizes); omitted = single variant.
+   * The storefront has no variant picker yet and always sells the first
+   * variant, so the sample catalog leaves this unset.
+   */
+  option?: { title: string; values: string[] };
+};
+
+const PRODUCTS: SeedProduct[] = [
+  {
+    title: "Everyday Cotton Tee",
+    handle: "everyday-cotton-tee",
+    category: "Apparel",
+    description: "Heavyweight organic cotton with a relaxed fit that keeps its shape wash after wash.",
+    price: 28,
+    weight: 220,
+    badge: "Bestseller",
+    stock: 120,
+  },
+  {
+    title: "Brushed Crewneck",
+    handle: "brushed-crewneck",
+    category: "Apparel",
+    description: "Soft brushed fleece inside, clean loopback outside. Made for cool mornings.",
+    price: 64,
+    weight: 520,
+    badge: "New",
+    stock: 60,
+  },
+  {
+    title: "Canvas Tote Bag",
+    handle: "canvas-tote-bag",
+    category: "Accessories",
+    description: "Waxed cotton canvas with an inside pocket and long handles that sit comfortably on the shoulder.",
+    price: 34,
+    weight: 380,
+    badge: "Everyday carry",
+    stock: 80,
+  },
+  {
+    title: "Ribbed Wool Beanie",
+    handle: "ribbed-wool-beanie",
+    category: "Accessories",
+    description: "Merino blend rib knit with a fold-over cuff. Warm without the itch.",
+    price: 26,
+    weight: 90,
+    badge: "Cold weather",
+    stock: 75,
+  },
+  {
+    title: "Stoneware Mug",
+    handle: "stoneware-mug",
+    category: "Home",
+    description: "Hand-glazed stoneware that holds 350 ml and is safe in the dishwasher and microwave.",
+    price: 22,
+    weight: 410,
+    badge: "Handmade",
+    stock: 150,
+  },
+  {
+    title: "Linen Napkins",
+    handle: "linen-napkins",
+    category: "Home",
+    description: "Stonewashed linen napkins that soften with every wash.",
+    price: 38,
+    weight: 260,
+    badge: "Table set",
+    stock: 40,
+    packCount: "Set of 4",
+  },
+  {
+    title: "Linen Notebook",
+    handle: "linen-notebook",
+    category: "Stationery",
+    description: "A5, lay-flat binding, 160 pages of 100 gsm dot-grid paper under a linen cover.",
+    price: 18,
+    weight: 300,
+    badge: "Staff pick",
+    stock: 200,
+  },
+  {
+    title: "Brass Pen",
+    handle: "brass-pen",
+    category: "Stationery",
+    description: "Solid brass body that patinas with use. Takes standard gel refills.",
+    price: 42,
+    weight: 45,
+    badge: "Gift idea",
+    stock: 55,
+  },
+];
+
+function skuFor(handle: string, value?: string) {
+  return [handle, value].filter(Boolean).join("-").toUpperCase();
+}
+
 export default async function seedDemoData({ container }: ExecArgs) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
   const link = container.resolve(ContainerRegistrationKeys.LINK);
@@ -63,8 +182,6 @@ export default async function seedDemoData({ container }: ExecArgs) {
   const salesChannelModuleService = container.resolve(Modules.SALES_CHANNEL);
   const storeModuleService = container.resolve(Modules.STORE);
 
-  const countries = ["gb", "de", "dk", "se", "fr", "es", "it"];
-
   logger.info("Seeding store data...");
   const [store] = await storeModuleService.listStores();
   let defaultSalesChannel = await salesChannelModuleService.listSalesChannels({
@@ -72,16 +189,11 @@ export default async function seedDemoData({ container }: ExecArgs) {
   });
 
   if (!defaultSalesChannel.length) {
-    // create the default sales channel
     const { result: salesChannelResult } = await createSalesChannelsWorkflow(
       container
     ).run({
       input: {
-        salesChannelsData: [
-          {
-            name: "Default Sales Channel",
-          },
-        ],
+        salesChannelsData: [{ name: "Default Sales Channel" }],
       },
     });
     defaultSalesChannel = salesChannelResult;
@@ -90,15 +202,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
   await updateStoreCurrencies(container).run({
     input: {
       store_id: store.id,
-      supported_currencies: [
-        {
-          currency_code: "eur",
-          is_default: true,
-        },
-        {
-          currency_code: "usd",
-        },
-      ],
+      supported_currencies: [{ currency_code: CURRENCY, is_default: true }],
     },
   });
 
@@ -110,30 +214,25 @@ export default async function seedDemoData({ container }: ExecArgs) {
       },
     },
   });
+
   logger.info("Seeding region data...");
   const { result: regionResult } = await createRegionsWorkflow(container).run({
     input: {
       regions: [
         {
-          name: "Europe",
-          currency_code: "eur",
-          countries,
+          name: REGION_NAME,
+          currency_code: CURRENCY,
+          countries: [COUNTRY],
           payment_providers: ["pp_system_default"],
         },
       ],
     },
   });
   const region = regionResult[0];
-  logger.info("Finished seeding regions.");
 
-  logger.info("Seeding tax regions...");
   await createTaxRegionsWorkflow(container).run({
-    input: countries.map((country_code) => ({
-      country_code,
-      provider_id: "tp_system",
-    })),
+    input: [{ country_code: COUNTRY, provider_id: "tp_system" }],
   });
-  logger.info("Finished seeding tax regions.");
 
   logger.info("Seeding stock location data...");
   const { result: stockLocationResult } = await createStockLocationsWorkflow(
@@ -142,10 +241,10 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       locations: [
         {
-          name: "European Warehouse",
+          name: WAREHOUSE.name,
           address: {
-            city: "Copenhagen",
-            country_code: "DK",
+            city: WAREHOUSE.city,
+            country_code: WAREHOUSE.country_code,
             address_1: "",
           },
         },
@@ -182,53 +281,19 @@ export default async function seedDemoData({ container }: ExecArgs) {
     const { result: shippingProfileResult } =
       await createShippingProfilesWorkflow(container).run({
         input: {
-          data: [
-            {
-              name: "Default Shipping Profile",
-              type: "default",
-            },
-          ],
+          data: [{ name: "Default Shipping Profile", type: "default" }],
         },
       });
     shippingProfile = shippingProfileResult[0];
   }
 
   const fulfillmentSet = await fulfillmentModuleService.createFulfillmentSets({
-    name: "European Warehouse delivery",
+    name: `${WAREHOUSE.name} delivery`,
     type: "shipping",
     service_zones: [
       {
-        name: "Europe",
-        geo_zones: [
-          {
-            country_code: "gb",
-            type: "country",
-          },
-          {
-            country_code: "de",
-            type: "country",
-          },
-          {
-            country_code: "dk",
-            type: "country",
-          },
-          {
-            country_code: "se",
-            type: "country",
-          },
-          {
-            country_code: "fr",
-            type: "country",
-          },
-          {
-            country_code: "es",
-            type: "country",
-          },
-          {
-            country_code: "it",
-            type: "country",
-          },
-        ],
+        name: REGION_NAME,
+        geo_zones: [{ country_code: COUNTRY, type: "country" }],
       },
     ],
   });
@@ -242,6 +307,11 @@ export default async function seedDemoData({ container }: ExecArgs) {
     },
   });
 
+  const shippingRules = [
+    { attribute: "enabled_in_store", value: "true", operator: "eq" as const },
+    { attribute: "is_return", value: "false", operator: "eq" as const },
+  ];
+
   await createShippingOptionsWorkflow(container).run({
     input: [
       {
@@ -252,35 +322,14 @@ export default async function seedDemoData({ container }: ExecArgs) {
         shipping_profile_id: shippingProfile.id,
         type: {
           label: "Standard",
-          description: "Ship in 2-3 days.",
+          description: "Ships in 2-4 business days.",
           code: "standard",
         },
         prices: [
-          {
-            currency_code: "usd",
-            amount: 10,
-          },
-          {
-            currency_code: "eur",
-            amount: 10,
-          },
-          {
-            region_id: region.id,
-            amount: 10,
-          },
+          { currency_code: CURRENCY, amount: 15 },
+          { region_id: region.id, amount: 15 },
         ],
-        rules: [
-          {
-            attribute: "enabled_in_store",
-            value: "true",
-            operator: "eq",
-          },
-          {
-            attribute: "is_return",
-            value: "false",
-            operator: "eq",
-          },
-        ],
+        rules: shippingRules,
       },
       {
         name: "Express Shipping",
@@ -290,39 +339,17 @@ export default async function seedDemoData({ container }: ExecArgs) {
         shipping_profile_id: shippingProfile.id,
         type: {
           label: "Express",
-          description: "Ship in 24 hours.",
+          description: "Ships next business day.",
           code: "express",
         },
         prices: [
-          {
-            currency_code: "usd",
-            amount: 10,
-          },
-          {
-            currency_code: "eur",
-            amount: 10,
-          },
-          {
-            region_id: region.id,
-            amount: 10,
-          },
+          { currency_code: CURRENCY, amount: 30 },
+          { region_id: region.id, amount: 30 },
         ],
-        rules: [
-          {
-            attribute: "enabled_in_store",
-            value: "true",
-            operator: "eq",
-          },
-          {
-            attribute: "is_return",
-            value: "false",
-            operator: "eq",
-          },
-        ],
+        rules: shippingRules,
       },
     ],
   });
-  logger.info("Finished seeding fulfillment data.");
 
   await linkSalesChannelsToStockLocationWorkflow(container).run({
     input: {
@@ -330,19 +357,17 @@ export default async function seedDemoData({ container }: ExecArgs) {
       add: [defaultSalesChannel[0].id],
     },
   });
-  logger.info("Finished seeding stock location data.");
 
   logger.info("Seeding publishable API key data...");
-  let publishableApiKey: ApiKey | null = null;
-  const { data } = await query.graph({
+  const { data: existingKeys } = await query.graph({
     entity: "api_key",
-    fields: ["id"],
+    fields: ["id", "token"],
     filters: {
       type: "publishable",
     },
   });
 
-  publishableApiKey = data?.[0];
+  let publishableApiKey = existingKeys?.[0] as Pick<ApiKey, "id" | "token"> | undefined;
 
   if (!publishableApiKey) {
     const {
@@ -351,7 +376,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
       input: {
         api_keys: [
           {
-            title: "Webshop",
+            title: "Storefront",
             type: "publishable",
             created_by: "",
           },
@@ -359,7 +384,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
       },
     });
 
-    publishableApiKey = publishableApiKeyResult as ApiKey;
+    publishableApiKey = publishableApiKeyResult as Pick<ApiKey, "id" | "token">;
   }
 
   await linkSalesChannelsToApiKeyWorkflow(container).run({
@@ -368,549 +393,63 @@ export default async function seedDemoData({ container }: ExecArgs) {
       add: [defaultSalesChannel[0].id],
     },
   });
-  logger.info("Finished seeding publishable API key data.");
 
   logger.info("Seeding product data...");
-
   const { result: categoryResult } = await createProductCategoriesWorkflow(
     container
   ).run({
     input: {
-      product_categories: [
-        {
-          name: "Shirts",
-          is_active: true,
-        },
-        {
-          name: "Sweatshirts",
-          is_active: true,
-        },
-        {
-          name: "Pants",
-          is_active: true,
-        },
-        {
-          name: "Merch",
-          is_active: true,
-        },
-      ],
+      product_categories: CATEGORIES.map((name) => ({ name, is_active: true })),
     },
   });
+  const categoryId = (name: Category) =>
+    categoryResult.find((category) => category.name === name)!.id;
 
   await createProductsWorkflow(container).run({
     input: {
-      products: [
-        {
-          title: "Medusa T-Shirt",
-          category_ids: [
-            categoryResult.find((cat) => cat.name === "Shirts")!.id,
-          ],
-          description:
-            "Reimagine the feeling of a classic T-shirt. With our cotton T-shirts, everyday essentials no longer have to be ordinary.",
-          handle: "t-shirt",
-          weight: 400,
+      products: PRODUCTS.map((product) => {
+        const option = product.option ?? { title: "Default", values: ["Default"] };
+        return {
+          title: product.title,
+          handle: product.handle,
+          description: product.description,
+          category_ids: [categoryId(product.category)],
+          weight: product.weight,
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
-          images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-back.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-white-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-white-back.png",
-            },
-          ],
-          options: [
-            {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
-            },
-            {
-              title: "Color",
-              values: ["Black", "White"],
-            },
-          ],
-          variants: [
-            {
-              title: "S / Black",
-              sku: "SHIRT-S-BLACK",
-              options: {
-                Size: "S",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "S / White",
-              sku: "SHIRT-S-WHITE",
-              options: {
-                Size: "S",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M / Black",
-              sku: "SHIRT-M-BLACK",
-              options: {
-                Size: "M",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M / White",
-              sku: "SHIRT-M-WHITE",
-              options: {
-                Size: "M",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L / Black",
-              sku: "SHIRT-L-BLACK",
-              options: {
-                Size: "L",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L / White",
-              sku: "SHIRT-L-WHITE",
-              options: {
-                Size: "L",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL / Black",
-              sku: "SHIRT-XL-BLACK",
-              options: {
-                Size: "XL",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL / White",
-              sku: "SHIRT-XL-WHITE",
-              options: {
-                Size: "XL",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-          ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel[0].id,
-            },
-          ],
-        },
-        {
-          title: "Medusa Sweatshirt",
-          category_ids: [
-            categoryResult.find((cat) => cat.name === "Sweatshirts")!.id,
-          ],
-          description:
-            "Reimagine the feeling of a classic sweatshirt. With our cotton sweatshirt, everyday essentials no longer have to be ordinary.",
-          handle: "sweatshirt",
-          weight: 400,
-          status: ProductStatus.PUBLISHED,
-          shipping_profile_id: shippingProfile.id,
-          images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-back.png",
-            },
-          ],
-          options: [
-            {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
-            },
-          ],
-          variants: [
-            {
-              title: "S",
-              sku: "SWEATSHIRT-S",
-              options: {
-                Size: "S",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M",
-              sku: "SWEATSHIRT-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L",
-              sku: "SWEATSHIRT-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "SWEATSHIRT-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-          ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel[0].id,
-            },
-          ],
-        },
-        {
-          title: "Medusa Sweatpants",
-          category_ids: [
-            categoryResult.find((cat) => cat.name === "Pants")!.id,
-          ],
-          description:
-            "Reimagine the feeling of classic sweatpants. With our cotton sweatpants, everyday essentials no longer have to be ordinary.",
-          handle: "sweatpants",
-          weight: 400,
-          status: ProductStatus.PUBLISHED,
-          shipping_profile_id: shippingProfile.id,
-          images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-back.png",
-            },
-          ],
-          options: [
-            {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
-            },
-          ],
-          variants: [
-            {
-              title: "S",
-              sku: "SWEATPANTS-S",
-              options: {
-                Size: "S",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M",
-              sku: "SWEATPANTS-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L",
-              sku: "SWEATPANTS-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "SWEATPANTS-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-          ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel[0].id,
-            },
-          ],
-        },
-        {
-          title: "Medusa Shorts",
-          category_ids: [
-            categoryResult.find((cat) => cat.name === "Merch")!.id,
-          ],
-          description:
-            "Reimagine the feeling of classic shorts. With our cotton shorts, everyday essentials no longer have to be ordinary.",
-          handle: "shorts",
-          weight: 400,
-          status: ProductStatus.PUBLISHED,
-          shipping_profile_id: shippingProfile.id,
-          images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/shorts-vintage-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/shorts-vintage-back.png",
-            },
-          ],
-          options: [
-            {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
-            },
-          ],
-          variants: [
-            {
-              title: "S",
-              sku: "SHORTS-S",
-              options: {
-                Size: "S",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M",
-              sku: "SHORTS-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L",
-              sku: "SHORTS-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "SHORTS-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-          ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel[0].id,
-            },
-          ],
-        },
-      ],
+          // The storefront reads these for the card badge, category and stock.
+          metadata: {
+            category: product.category,
+            badge: product.badge,
+            stock: product.stock,
+            ...(product.packCount ? { pack_count: product.packCount } : {}),
+          },
+          options: [{ title: option.title, values: option.values }],
+          variants: option.values.map((value) => ({
+            title: product.option ? value : product.title,
+            sku: skuFor(product.handle, product.option ? value : undefined),
+            options: { [option.title]: value },
+            prices: [{ amount: product.price, currency_code: CURRENCY }],
+          })),
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
+        };
+      }),
     },
   });
-  logger.info("Finished seeding product data.");
 
-  logger.info("Seeding inventory levels.");
-
+  logger.info("Seeding inventory levels...");
   const { data: inventoryItems } = await query.graph({
     entity: "inventory_item",
     fields: ["id"],
   });
 
-  const inventoryLevels: CreateInventoryLevelInput[] = [];
-  for (const inventoryItem of inventoryItems) {
-    const inventoryLevel = {
+  const inventoryLevels: CreateInventoryLevelInput[] = inventoryItems.map(
+    (inventoryItem) => ({
       location_id: stockLocation.id,
-      stocked_quantity: 1000000,
+      stocked_quantity: 1000,
       inventory_item_id: inventoryItem.id,
-    };
-    inventoryLevels.push(inventoryLevel);
-  }
+    })
+  );
 
   await createInventoryLevelsWorkflow(container).run({
     input: {
@@ -918,5 +457,9 @@ export default async function seedDemoData({ container }: ExecArgs) {
     },
   });
 
-  logger.info("Finished seeding inventory levels data.");
+  logger.info("Finished seeding. Add these to the storefront's .env.local:");
+  logger.info(`  MEDUSA_PUBLISHABLE_KEY=${publishableApiKey.token}`);
+  logger.info(`  MEDUSA_REGION_ID=${region.id}`);
+  logger.info(`  NEXT_PUBLIC_MEDUSA_REGION_ID=${region.id}`);
+  logger.info(`  MEDUSA_SALES_CHANNEL_ID=${defaultSalesChannel[0].id}`);
 }

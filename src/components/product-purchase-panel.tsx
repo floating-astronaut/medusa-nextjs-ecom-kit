@@ -70,7 +70,7 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
         <div className="mt-6 rounded-[1.5rem] border border-[rgba(24,32,23,0.08)] bg-white/80 p-5 sm:mt-8 sm:rounded-[1.7rem] sm:p-6">
           <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-muted)] sm:tracking-[0.24em]">How it ships</p>
           <p className="mt-4 text-sm leading-7 text-[var(--color-muted)]">
-            Carefully packed and dispatched the same or next business day. Pay by card or through the hosted checkout option.
+            Carefully packed and dispatched the same or next business day. Pay securely at checkout.
           </p>
         </div>
 

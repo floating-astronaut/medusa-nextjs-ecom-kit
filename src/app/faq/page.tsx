@@ -58,7 +58,7 @@ const faqs = [
   {
     question: "Which payment methods do you accept?",
     answer:
-      "All major credit and debit cards through our hosted checkout.",
+      "The payment options shown at checkout. Your order is approved once payment is confirmed.",
   },
   {
     question: "Do you offer returns?",

@@ -31,7 +31,7 @@ function TrustBadgeRow() {
   const items = [
     { icon: "🔒", label: "Secure checkout" },
     { icon: "📦", label: "Tracked shipping" },
-    { icon: "✦", label: `Ships within ${region.countryName}` },
+    { icon: "✦", label: `Shipping to ${region.countryName}` },
   ];
   return (
     <div className="flex flex-wrap gap-2">
@@ -352,7 +352,7 @@ export function CheckoutPageClient() {
             Review the order.
           </h1>
           <p className="mt-3 text-sm leading-7 text-[var(--color-muted)] sm:mt-5 sm:text-base sm:leading-8">
-            Confirm your sizes, address, and preferred payment method. Bank transfer works best for most buyers; the placeholder checkout is a demo you can wire to any provider.
+            Confirm your items, address, and preferred payment method. Bank transfer works best for most buyers; the placeholder checkout is a demo you can wire to any provider.
           </p>
 
           {items.length > 0 ? (
@@ -504,7 +504,7 @@ export function CheckoutPageClient() {
             <SectionHeader
               step="2"
               title="Shipping address"
-              subtitle={`Start typing to autocomplete. We ship within ${region.countryName}.`}
+              subtitle={`Start typing to autocomplete. Shipping to ${region.countryName}.`}
             />
             <div className="mt-5 grid gap-4 sm:grid-cols-6">
               <label className="block sm:col-span-6">

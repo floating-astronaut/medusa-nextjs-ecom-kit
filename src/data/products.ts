@@ -70,7 +70,8 @@ function mapProduct(product: MedusaProduct): Product {
   const metadata = product.metadata ?? {};
   const variant = product.variants?.[0];
 
-  const livePrice = ((variant?.calculated_price?.calculated_amount ?? 0) as number) / 100;
+  // Medusa 2 stores prices in major units (15 = $15.00), so no cents conversion.
+  const livePrice = (variant?.calculated_price?.calculated_amount ?? 0) as number;
 
   // Sale support: shop owner sets either compare_at_price (dollars) or
   // sale_percent (number 1-99) in the product's metadata. Either field

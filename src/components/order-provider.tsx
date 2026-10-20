@@ -86,7 +86,7 @@ function mapCartItem(item: StoreCartItem): OrderItem {
     slug: item.product_handle,
     name: item.product_title,
     category: typeof metadata.category === "string" ? metadata.category : "Catalog",
-    price: (item.unit_price * packageMultiplier) / 100,
+    price: item.unit_price * packageMultiplier,
     compareAtPrice: null,
     salePercent: null,
     stock: typeof metadata.stock === "number" ? metadata.stock : 0,
@@ -157,7 +157,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const syncCart = (cart: StoreCart) => {
     setCartId(cart.id);
     setItems(cart.items.map(mapCartItem));
-    setTotal(cart.total / 100);
+    setTotal(cart.total);
     window.localStorage.setItem(STORAGE_KEY, cart.id);
   };
 
