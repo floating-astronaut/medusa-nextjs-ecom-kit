@@ -5,6 +5,9 @@ import type { Product } from "@/data/products";
 import { getProductImage } from "@/lib/product-media";
 import { formatMoney } from "@/config/region";
 
+const CARD_BUTTON =
+  "w-full rounded-full bg-[var(--color-forest)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] !text-white transition hover:bg-[var(--color-forest-deep)] sm:tracking-[0.22em]";
+
 /** Pulls "6 pieces" out of a description if metadata wasn't set. */
 function inferPackInfo(product: Product): { count: string | null } {
   if (product.packCount) {
@@ -22,6 +25,7 @@ export function ProductCard({ product }: { product: Product }) {
   const imageSrc = getProductImage({ slug: product.slug, category: product.category });
 
   const onSale = product.salePercent != null && product.compareAtPrice != null;
+  const inStock = product.variants.some((variant) => variant.available);
   const packInfo = inferPackInfo(product);
 
   return (
@@ -79,7 +83,7 @@ export function ProductCard({ product }: { product: Product }) {
           <div className="mt-6 flex items-end justify-between gap-4 border-t border-[rgba(24,32,23,0.08)] pt-4 sm:mt-8 sm:pt-5">
             <div>
               <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-muted)] sm:tracking-[0.24em]">In stock</p>
-              <p className="mt-2 text-sm text-[var(--color-forest)]">{product.stock > 0 ? `${product.stock} available` : "Ships soon"}</p>
+              <p className="mt-2 text-sm text-[var(--color-forest)]">{product.stock > 0 ? `${product.stock} available` : "Sold out"}</p>
             </div>
             <div className="text-right">
               {onSale ? (
@@ -96,7 +100,9 @@ export function ProductCard({ product }: { product: Product }) {
                 </>
               ) : (
                 <>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-muted)] sm:tracking-[0.24em]">From</p>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-muted)] sm:tracking-[0.24em]">
+                    {product.priceMax > product.price ? "From" : "Price"}
+                  </p>
                   <p className="mt-2 text-2xl font-semibold text-[var(--color-clay)] sm:text-3xl">{formatMoney(product.price)}</p>
                 </>
               )}
@@ -105,10 +111,23 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
       </Link>
       <div className="mt-auto px-4 pb-4 sm:px-6 sm:pb-6">
-        <OrderButton
-          product={product}
-          className="w-full rounded-full bg-[var(--color-forest)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] !text-white transition hover:bg-[var(--color-forest-deep)] sm:tracking-[0.22em]"
-        />
+        {product.options.length > 0 ? (
+          // Size/colour must be chosen first, so send shoppers to the product page.
+          <Link
+            href={`/shop/${product.slug}`}
+            // Buttons inherit the body font size (globals.css `font: inherit`), so match it here.
+            className={`${CARD_BUTTON} inline-flex items-center justify-center !text-base !font-normal !tracking-[0.22em]`}
+          >
+            Choose options
+          </Link>
+        ) : (
+          <OrderButton
+            product={product}
+            disabled={!inStock}
+            label={inStock ? "Add to cart" : "Sold out"}
+            className={`${CARD_BUTTON} disabled:cursor-not-allowed disabled:opacity-50`}
+          />
+        )}
       </div>
     </article>
   );

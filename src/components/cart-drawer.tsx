@@ -118,7 +118,7 @@ export function CartDrawer() {
   }, [items]);
 
   const highlightKey = lastAdded
-    ? `${lastAdded.name}::${lastAdded.packageLabel ?? ""}::${lastAddSignal}`
+    ? `${lastAdded.name}::${lastAdded.variantLabel ?? ""}::${lastAddSignal}`
     : null;
 
   if (!cartDrawerOpen) {
@@ -194,7 +194,7 @@ export function CartDrawer() {
                         const isHighlighted =
                           lastAdded &&
                           Date.now() - lastAddSignal < HIGHLIGHT_WINDOW_MS &&
-                          `${item.name}::${item.packageLabel ?? ""}::${lastAddSignal}` === highlightKey;
+                          `${item.name}::${item.variantLabel ?? ""}::${lastAddSignal}` === highlightKey;
 
                         return (
                           <article
@@ -211,9 +211,9 @@ export function CartDrawer() {
                                   <h3 className="font-display text-2xl leading-none text-[var(--color-forest)]">
                                     {item.name}
                                   </h3>
-                                  {item.packageLabel ? (
+                                  {item.variantLabel ? (
                                     <span className="rounded-full bg-[var(--color-panel)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-clay)]">
-                                      {item.packageLabel}
+                                      {item.variantLabel}
                                     </span>
                                   ) : null}
                                 </div>

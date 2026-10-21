@@ -46,13 +46,20 @@ export async function generateMetadata({
 function profileNotes(product: { category: string; stock: number; badge: string }) {
   return [
     { label: "Category", value: product.category },
-    { label: "Availability", value: product.stock > 0 ? `${product.stock} in stock` : "Ships soon" },
+    { label: "Availability", value: product.stock > 0 ? `${product.stock} in stock` : "Sold out" },
     { label: "Highlight", value: product.badge },
   ];
 }
 
-export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default async function ProductDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ variant?: string | string[] }>;
+}) {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const initialVariantId = typeof query.variant === "string" ? query.variant : undefined;
   const [product, products] = await Promise.all([getProductBySlug(slug), getProducts()]);
 
   if (!product) {
@@ -123,7 +130,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             </div>
           </div>
 
-          <ProductPurchasePanel product={product} />
+          <ProductPurchasePanel product={product} initialVariantId={initialVariantId} />
         </div>
       </section>
 

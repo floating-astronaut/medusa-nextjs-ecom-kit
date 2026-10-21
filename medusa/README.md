@@ -34,10 +34,12 @@ npm run dev
 | Shipping | Standard ($15) and Express ($30) for the US |
 | Sales channel | Default Sales Channel, linked to a publishable key |
 | Categories | Apparel, Accessories, Home, Stationery |
-| Products | 8 single-variant products, 1,000 units each in stock |
+| Products | 8 products; the tee (size × colour), crewneck (size) and beanie (colour) have variants. Stock is real Medusa inventory, and XL / Natural tee starts sold out |
 
-Each product's `metadata` carries `category`, `badge`, `stock` and optionally
-`pack_count`; the storefront reads these for the product cards.
+Each product's `metadata` carries `category`, `badge`, optionally `pack_count`,
+and `option_order` (display order of options and their values, which Medusa
+doesn't keep). The storefront reads these for product cards and the variant
+picker.
 
 When it finishes, the seed prints `MEDUSA_PUBLISHABLE_KEY`, `MEDUSA_REGION_ID`,
 `NEXT_PUBLIC_MEDUSA_REGION_ID` and `MEDUSA_SALES_CHANNEL_ID` for the

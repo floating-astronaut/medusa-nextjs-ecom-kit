@@ -3,17 +3,19 @@
 import { useEffect, useState } from "react";
 import { useOrder } from "@/components/order-provider";
 import type { Product } from "@/data/products";
-import type { PackageSelection } from "@/lib/product-packaging";
 
 export function OrderButton({
   product,
-  packageSelection,
+  variantId,
   label = "Add to cart",
+  disabled = false,
   className,
 }: {
   product: Product;
-  packageSelection?: PackageSelection | null;
+  /** Variant to add; defaults to the product's default variant. */
+  variantId?: string;
   label?: string;
+  disabled?: boolean;
   className: string;
 }) {
   const { addItem } = useOrder();
@@ -28,11 +30,11 @@ export function OrderButton({
   }, [error]);
 
   async function onClick() {
-    if (busy) return;
+    if (busy || disabled) return;
     setBusy(true);
     setError(null);
     try {
-      await addItem(product, { packageSelection });
+      await addItem(product, { variantId });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error("[add-to-cart] failed", err);
@@ -47,7 +49,7 @@ export function OrderButton({
       <button
         type="button"
         onClick={() => void onClick()}
-        disabled={busy}
+        disabled={busy || disabled}
         className={className}
         aria-busy={busy}
       >
