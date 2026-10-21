@@ -144,8 +144,11 @@ type ProductForSchema = {
   description: string;
   category: string;
   price: number;
+  /** Highest variant price; an AggregateOffer is emitted when it differs from `price`. */
+  priceMax?: number;
   badge?: string;
   stock?: number;
+  variants?: Array<{ available: boolean }>;
 };
 
 export function productSchema(product: ProductForSchema, imagePath: string) {
@@ -166,19 +169,31 @@ export function productSchema(product: ProductForSchema, imagePath: string) {
     category: product.category,
     url,
     ...(additionalProperty.length ? { additionalProperty } : {}),
-    offers: {
-      "@type": "Offer",
-      url,
-      priceCurrency: brand.currencyCode,
-      price: product.price.toFixed(2),
-      availability:
-        (product.stock ?? 0) > 0
-          ? "https://schema.org/InStock"
-          : "https://schema.org/OutOfStock",
-      itemCondition: "https://schema.org/NewCondition",
-      seller: { "@id": `${SITE_URL}#organization` },
-    },
+    offers: offerFor(product, url),
   };
+}
+
+function offerFor(product: ProductForSchema, url: string) {
+  const inStock = product.variants?.length
+    ? product.variants.some((variant) => variant.available)
+    : (product.stock ?? 0) > 0;
+  const shared = {
+    url,
+    priceCurrency: brand.currencyCode,
+    availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+    itemCondition: "https://schema.org/NewCondition",
+    seller: { "@id": `${SITE_URL}#organization` },
+  };
+  if (product.priceMax !== undefined && product.priceMax > product.price) {
+    return {
+      "@type": "AggregateOffer",
+      ...shared,
+      lowPrice: product.price.toFixed(2),
+      highPrice: product.priceMax.toFixed(2),
+      offerCount: product.variants?.length ?? 1,
+    };
+  }
+  return { "@type": "Offer", ...shared, price: product.price.toFixed(2) };
 }
 
 export function faqSchema(faqs: Array<{ question: string; answer: string }>) {

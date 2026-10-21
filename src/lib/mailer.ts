@@ -70,7 +70,7 @@ type OrderPayload = {
     category?: string;
     quantity: number;
     price: number;
-    packageLabel?: string;
+    variantLabel?: string;
   }>;
   paymentMethod?: "bank_transfer" | "placeholder" | "review" | null;
   paymentReference?: string | null;
@@ -123,7 +123,7 @@ function formatDate(iso: string) {
 function renderOrderLines(order: OrderPayload) {
   return order.products
     .map((item) => {
-      const size = item.packageLabel ? ` · ${item.packageLabel}` : "";
+      const size = item.variantLabel ? ` · ${item.variantLabel}` : "";
       return `• ${item.quantity}× ${item.name}${size} — ${money(item.price * item.quantity)}`;
     })
     .join("\n");
@@ -133,7 +133,7 @@ function renderItemRows(order: OrderPayload) {
   return order.products
     .map((item) => {
       const lineTotal = item.price * item.quantity;
-      const size = item.packageLabel ? ` · ${escapeHtml(item.packageLabel)}` : "";
+      const size = item.variantLabel ? ` · ${escapeHtml(item.variantLabel)}` : "";
       const category = item.category ? escapeHtml(item.category) : "";
       return `
         <tr>

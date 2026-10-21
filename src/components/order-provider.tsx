@@ -9,28 +9,37 @@ import {
   type ReactNode,
 } from "react";
 import type { Product } from "@/data/products";
-import { getDefaultPackageOption, type PackageSelection } from "@/lib/product-packaging";
 
-type OrderItem = Product & {
-  quantity: number;
+export type OrderItem = {
+  /** Product id. */
+  id: string;
+  variantId: string;
   lineItemId: string;
-  packageLabel: string | null;
-  packageUnits: number | null;
-  packageMultiplier: number;
+  slug: string;
+  name: string;
+  category: string;
+  /** Unit price in major units. */
+  price: number;
+  quantity: number;
+  description: string;
+  badge: string;
+  /** "M / Black"; null for single-variant products. */
+  variantLabel: string | null;
 };
 
 type OrderContextValue = {
   items: OrderItem[];
   itemCount: number;
   total: number;
-  addItem: (product: Product, options?: { packageSelection?: PackageSelection | null }) => Promise<void>;
+  /** Adds the given variant (defaults to the product's default variant). */
+  addItem: (product: Product, options?: { variantId?: string }) => Promise<void>;
   removeItem: (lineItemId: string) => Promise<void>;
   updateQuantity: (lineItemId: string, quantity: number) => Promise<void>;
   clearItems: () => Promise<void>;
   /** Auto-incremented when an item is successfully added — drawer + toast subscribe to this. */
   lastAddSignal: number;
   /** Snapshot of the most recently added item, for toast / drawer highlight. */
-  lastAdded: { name: string; packageLabel: string | null; addedAt: number } | null;
+  lastAdded: { name: string; variantLabel: string | null; addedAt: number } | null;
   /** Drawer state — opened automatically on add, dismissable. */
   cartDrawerOpen: boolean;
   setCartDrawerOpen: (open: boolean) => void;
@@ -44,6 +53,7 @@ type StoreCartItem = {
   product_handle: string;
   product_subtitle?: string | null;
   variant_id: string;
+  variant_title?: string | null;
   quantity: number;
   unit_price: number;
   metadata?: Record<string, unknown> | null;
@@ -61,24 +71,23 @@ const OrderContext = createContext<OrderContextValue | null>(null);
 const STORAGE_KEY = "storefront-cart-id";
 const DEFAULT_REGION_ID = process.env.NEXT_PUBLIC_MEDUSA_REGION_ID ?? "";
 
-function buildLineItemMetadata(product: Product, packageSelection?: PackageSelection | null) {
+function buildLineItemMetadata(product: Pick<Product, "category" | "badge">) {
   return {
     category: product.category,
-    stock: product.stock,
     badge: product.badge,
-    packageLabel: packageSelection?.label ?? null,
-    packageUnits: packageSelection?.units ?? null,
-    packageMultiplier: packageSelection?.multiplier ?? 1,
   };
+}
+
+/** Medusa names a single-variant product's variant after the product (or "Default"). */
+function labelFromVariantTitle(variantTitle: string | null | undefined, productTitle: string) {
+  if (!variantTitle) return null;
+  const title = variantTitle.trim();
+  if (!title || title === productTitle || title.toLowerCase() === "default") return null;
+  return title;
 }
 
 function mapCartItem(item: StoreCartItem): OrderItem {
   const metadata = item.metadata ?? {};
-  const packageMultiplier = typeof metadata.packageMultiplier === "number" && metadata.packageMultiplier > 0
-    ? metadata.packageMultiplier
-    : 1;
-  const quantity = Math.max(1, Math.round(item.quantity / packageMultiplier));
-
   return {
     id: item.product_id,
     variantId: item.variant_id,
@@ -86,10 +95,8 @@ function mapCartItem(item: StoreCartItem): OrderItem {
     slug: item.product_handle,
     name: item.product_title,
     category: typeof metadata.category === "string" ? metadata.category : "Catalog",
-    price: item.unit_price * packageMultiplier,
-    compareAtPrice: null,
-    salePercent: null,
-    stock: typeof metadata.stock === "number" ? metadata.stock : 0,
+    price: item.unit_price,
+    quantity: item.quantity,
     description:
       typeof item.product_description === "string" && item.product_description.length > 0
         ? item.product_description
@@ -100,11 +107,7 @@ function mapCartItem(item: StoreCartItem): OrderItem {
         : typeof item.product_subtitle === "string" && item.product_subtitle.length > 0
           ? item.product_subtitle
           : "Curated selection",
-    packCount: typeof metadata.pack_count === "string" ? metadata.pack_count : null,
-    quantity,
-    packageLabel: typeof metadata.packageLabel === "string" ? metadata.packageLabel : null,
-    packageUnits: typeof metadata.packageUnits === "number" ? metadata.packageUnits : null,
-    packageMultiplier,
+    variantLabel: labelFromVariantTitle(item.variant_title, item.product_title),
   };
 }
 
@@ -133,17 +136,13 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const [lastAdded, setLastAdded] = useState<OrderContextValue["lastAdded"]>(null);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
 
-  const announceAdd = (product: Product, packageSelection?: PackageSelection | null) => {
+  const announceAdd = (name: string, variantLabel: string | null) => {
     const now = Date.now();
     // Defer to next tick so we never collide with the syncCart setState batch
     // that just ran. Avoids any "setState during render" warnings and any
     // racy ordering between cart-state and drawer-open transitions.
     const fire = () => {
-      setLastAdded({
-        name: product.name,
-        packageLabel: packageSelection?.label ?? null,
-        addedAt: now,
-      });
+      setLastAdded({ name, variantLabel, addedAt: now });
       setLastAddSignal(now);
       setCartDrawerOpen(true);
     };
@@ -192,16 +191,15 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   }, []);
   /* eslint-enable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
 
-  const addItem = async (product: Product, options?: { packageSelection?: PackageSelection | null }) => {
-    const packageSelection = options?.packageSelection ?? getDefaultPackageOption(product);
-    const packageLabel = packageSelection?.label ?? null;
-    const existing = items.find(
-      (item) => item.variantId === product.variantId && item.packageLabel === packageLabel,
-    );
+  const addItem = async (product: Product, options?: { variantId?: string }) => {
+    const variantId = options?.variantId ?? product.variantId;
+    const variant = product.variants.find((entry) => entry.id === variantId);
+    const label = variant && product.options.length > 0 ? variant.title : null;
+    const existing = items.find((item) => item.variantId === variantId);
 
     if (existing) {
       await updateQuantity(existing.lineItemId, existing.quantity + 1);
-      announceAdd(product, packageSelection);
+      announceAdd(product.name, label);
       return;
     }
 
@@ -209,9 +207,9 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       storeFetch<CartResponse>(`carts/${cartIdToUse}/line-items`, {
         method: "POST",
         body: JSON.stringify({
-          variant_id: product.variantId,
-          quantity: packageSelection?.multiplier ?? 1,
-          metadata: buildLineItemMetadata(product, packageSelection),
+          variant_id: variantId,
+          quantity: 1,
+          metadata: buildLineItemMetadata(product),
         }),
       });
 
@@ -220,6 +218,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     try {
       response = await tryPost(activeCartId);
     } catch (error) {
+      // Out of stock is a real answer, not a stale cart: surface it as-is.
+      if (error instanceof Error && /inventory/i.test(error.message)) {
+        throw new Error("That option just sold out.");
+      }
       // The stored cart may have been completed/converted; drop it and retry
       // with a fresh one rather than surfacing "unknown error" to the user.
       console.warn("[cart] add-line-items failed, refreshing cart and retrying", error);
@@ -232,7 +234,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     }
 
     syncCart(response.cart);
-    announceAdd(product, packageSelection);
+    announceAdd(product.name, label);
   };
 
   const removeItem = async (lineItemId: string) => {
@@ -257,19 +259,11 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const packageSelection = item.packageLabel
-      ? {
-          label: item.packageLabel,
-          units: item.packageUnits ?? 0,
-          multiplier: item.packageMultiplier,
-        }
-      : null;
-
     const response = await storeFetch<CartResponse>(`carts/${cartId}/line-items/${item.lineItemId}`, {
       method: "POST",
       body: JSON.stringify({
-        quantity: quantity * item.packageMultiplier,
-        metadata: buildLineItemMetadata(item, packageSelection),
+        quantity,
+        metadata: buildLineItemMetadata(item),
       }),
     });
     syncCart(response.cart);

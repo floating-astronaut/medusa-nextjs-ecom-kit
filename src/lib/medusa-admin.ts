@@ -39,7 +39,7 @@ type OrderProduct = {
   category?: string;
   quantity: number;
   price: number;
-  packageLabel?: string;
+  variantLabel?: string;
 };
 
 type DraftOrderInput = {
@@ -276,7 +276,7 @@ export async function createMedusaDraftOrder(input: DraftOrderInput) {
         quantity: Math.max(1, Number(p.quantity) || 1),
         unit_price: Number(p.price) || 0,
         metadata: {
-          ...(p.packageLabel ? { package_label: p.packageLabel } : {}),
+          ...(p.variantLabel ? { variant_label: p.variantLabel } : {}),
           ...(p.category ? { category: p.category } : {}),
           storefront_order_id: input.storefrontOrderId,
         },

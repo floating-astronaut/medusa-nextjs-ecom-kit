@@ -76,14 +76,18 @@ type SeedProduct = {
   price: number;
   weight: number;
   badge: string;
+  /** Units in stock for each variant (real Medusa inventory). */
   stock: number;
   packCount?: string;
   /**
-   * One option with several values (e.g. sizes); omitted = single variant.
-   * The storefront has no variant picker yet and always sells the first
-   * variant, so the sample catalog leaves this unset.
+   * Options such as Size or Colour. One variant is created per combination.
+   * Omitted = a single variant.
    */
-  option?: { title: string; values: string[] };
+  options?: { title: string; values: string[] }[];
+  /** Price for specific variants, keyed by variant title ("XL / Black"). */
+  variantPrices?: Record<string, number>;
+  /** Variant titles that start sold out, so the storefront's disabled state has something to show. */
+  soldOut?: string[];
 };
 
 const PRODUCTS: SeedProduct[] = [
@@ -95,7 +99,13 @@ const PRODUCTS: SeedProduct[] = [
     price: 28,
     weight: 220,
     badge: "Bestseller",
-    stock: 120,
+    stock: 30,
+    options: [
+      { title: "Size", values: ["S", "M", "L", "XL"] },
+      { title: "Color", values: ["Black", "Natural"] },
+    ],
+    variantPrices: { "XL / Black": 30, "XL / Natural": 30 },
+    soldOut: ["XL / Natural"],
   },
   {
     title: "Brushed Crewneck",
@@ -105,7 +115,8 @@ const PRODUCTS: SeedProduct[] = [
     price: 64,
     weight: 520,
     badge: "New",
-    stock: 60,
+    stock: 15,
+    options: [{ title: "Size", values: ["S", "M", "L", "XL"] }],
   },
   {
     title: "Canvas Tote Bag",
@@ -125,7 +136,8 @@ const PRODUCTS: SeedProduct[] = [
     price: 26,
     weight: 90,
     badge: "Cold weather",
-    stock: 75,
+    stock: 25,
+    options: [{ title: "Color", values: ["Charcoal", "Oat", "Rust"] }],
   },
   {
     title: "Stoneware Mug",
@@ -170,8 +182,29 @@ const PRODUCTS: SeedProduct[] = [
   },
 ];
 
-function skuFor(handle: string, value?: string) {
-  return [handle, value].filter(Boolean).join("-").toUpperCase();
+type VariantSeed = { title: string; sku: string; options: Record<string, string> };
+
+/** Every combination of the product's option values, e.g. S / Black, S / Natural, … */
+function variantsFor(product: SeedProduct): VariantSeed[] {
+  const options = product.options?.length
+    ? product.options
+    : [{ title: "Default", values: ["Default"] }];
+  let combos: Record<string, string>[] = [{}];
+  for (const option of options) {
+    combos = combos.flatMap((combo) =>
+      option.values.map((value) => ({ ...combo, [option.title]: value }))
+    );
+  }
+  return combos.map((combo) => {
+    const values = Object.values(combo);
+    const title = product.options?.length ? values.join(" / ") : product.title;
+    const skuParts = product.options?.length ? values : [];
+    return {
+      title,
+      sku: [product.handle, ...skuParts].join("-").replace(/\s+/g, "-").toUpperCase(),
+      options: combo,
+    };
+  });
 }
 
 export default async function seedDemoData({ container }: ExecArgs) {
@@ -408,7 +441,10 @@ export default async function seedDemoData({ container }: ExecArgs) {
   await createProductsWorkflow(container).run({
     input: {
       products: PRODUCTS.map((product) => {
-        const option = product.option ?? { title: "Default", values: ["Default"] };
+        const variants = variantsFor(product);
+        const options = product.options?.length
+          ? product.options
+          : [{ title: "Default", values: ["Default"] }];
         return {
           title: product.title,
           handle: product.handle,
@@ -417,19 +453,32 @@ export default async function seedDemoData({ container }: ExecArgs) {
           weight: product.weight,
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
-          // The storefront reads these for the card badge, category and stock.
+          // The storefront reads these for the card badge and category.
           metadata: {
             category: product.category,
             badge: product.badge,
-            stock: product.stock,
             ...(product.packCount ? { pack_count: product.packCount } : {}),
+            // Medusa doesn't keep option or value order; the storefront reads this.
+            ...(product.options?.length
+              ? {
+                  option_order: Object.fromEntries(
+                    product.options.map((option) => [option.title, option.values])
+                  ),
+                }
+              : {}),
           },
-          options: [{ title: option.title, values: option.values }],
-          variants: option.values.map((value) => ({
-            title: product.option ? value : product.title,
-            sku: skuFor(product.handle, product.option ? value : undefined),
-            options: { [option.title]: value },
-            prices: [{ amount: product.price, currency_code: CURRENCY }],
+          options,
+          variants: variants.map((variant) => ({
+            title: variant.title,
+            sku: variant.sku,
+            options: variant.options,
+            manage_inventory: true,
+            prices: [
+              {
+                amount: product.variantPrices?.[variant.title] ?? product.price,
+                currency_code: CURRENCY,
+              },
+            ],
           })),
           sales_channels: [{ id: defaultSalesChannel[0].id }],
         };
@@ -440,13 +489,22 @@ export default async function seedDemoData({ container }: ExecArgs) {
   logger.info("Seeding inventory levels...");
   const { data: inventoryItems } = await query.graph({
     entity: "inventory_item",
-    fields: ["id"],
+    fields: ["id", "sku"],
   });
+
+  // Stock per SKU: each product's `stock`, or 0 for variants listed in `soldOut`.
+  const stockBySku = new Map<string, number>();
+  for (const product of PRODUCTS) {
+    for (const variant of variantsFor(product)) {
+      const soldOut = product.soldOut?.includes(variant.title);
+      stockBySku.set(variant.sku, soldOut ? 0 : product.stock);
+    }
+  }
 
   const inventoryLevels: CreateInventoryLevelInput[] = inventoryItems.map(
     (inventoryItem) => ({
       location_id: stockLocation.id,
-      stocked_quantity: 1000,
+      stocked_quantity: stockBySku.get(inventoryItem.sku ?? "") ?? 0,
       inventory_item_id: inventoryItem.id,
     })
   );

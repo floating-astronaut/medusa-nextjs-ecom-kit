@@ -71,7 +71,7 @@ PayPal, or any gateway when you're ready to take money.
 
 | | |
 |---|---|
-| 🛍️ **Storefront** | Home, catalog (`/shop`, `/shop/[slug]`), cart, and a multi-step checkout |
+| 🛍️ **Storefront** | Home, catalog (`/shop`, `/shop/[slug]`), a size/colour **variant picker** with live stock, cart, and a multi-step checkout |
 | 👤 **Customer accounts** | Register, login, profile, and order history (`/account/*`) |
 | 💳 **Checkout & payments** | Generic **bank-transfer** flow + a **placeholder (demo)** payment route — provider-agnostic |
 | 📧 **Transactional email** | Order-received, payment, shipped, delivered & canceled emails via any SMTP provider |
@@ -261,6 +261,7 @@ the seams.
 |---|---|
 | Store name, tagline, colours, currency, socials | `.env.local` / `.env` (see [`src/config/brand.ts`](src/config/brand.ts)) |
 | Shipping country, currency, locale, dispatch cutoff, free-shipping threshold | `NEXT_PUBLIC_BRAND_*` / `NEXT_PUBLIC_*SHIPPING*` in `.env.local` (see [`src/config/region.ts`](src/config/region.ts)). Keep the currency the same as your Medusa region's. |
+| Option order on the product page (e.g. S, M, L before XL) | Product metadata `option_order`, e.g. `{"Size": ["S","M","L","XL"], "Color": ["Black","Natural"]}`. Without it, sizes and numbers sort naturally and other values alphabetically |
 | Home page reviews | [`src/data/testimonials.ts`](src/data/testimonials.ts) — ships with labelled samples; replace them or empty the array |
 | Products | Medusa admin, or [`medusa/src/scripts/seed.ts`](medusa/src/scripts/seed.ts) |
 | Home / about / FAQ / policies copy | `src/app/*/page.tsx` |
@@ -272,9 +273,6 @@ Branding is intentionally env-driven — for most cosmetic changes you only touc
 
 ### Known limitations
 
-- **One variant per product.** The storefront sells each product's first
-  variant and has no size or colour picker yet, so the sample catalog uses
-  single-variant products.
 - **No card payments out of the box.** Checkout offers bank transfer and a demo
   payment; wire a real provider before taking money (see
   [Going live](#going-live)).
@@ -294,7 +292,7 @@ Branding is intentionally env-driven — for most cosmetic changes you only touc
 ## Contributing
 
 Issues and PRs are welcome. Please keep changes typed (`npx tsc --noEmit` must
-stay clean) and run `npm run lint` before opening a PR. See
+stay clean) and run `npm run lint` and `npm test` (Node 22.6+) before opening a PR. See
 [CONTRIBUTING.md](./CONTRIBUTING.md) for the full guide.
 
 ---
